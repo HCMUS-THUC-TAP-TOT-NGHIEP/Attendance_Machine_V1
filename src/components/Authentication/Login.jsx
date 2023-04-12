@@ -16,10 +16,10 @@ import { LoginAccount } from "./api";
 const { Title } = Typography;
 
 const LoginPage = (props) => {
+  const { notify } = props;
   const {
     token: { colorBgContainer },
   } = theme.useToken();
-  const [notify, contextHolder] = notification.useNotification();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -65,7 +65,6 @@ const LoginPage = (props) => {
   };
   return (
     <Layout style={{ height: "100vh" }}>
-      {contextHolder}
       <Row
         style={{
           height: "inherit",

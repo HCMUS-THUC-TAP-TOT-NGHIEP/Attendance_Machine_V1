@@ -6,7 +6,7 @@ function MyFooter(props) {
   return (
     <Footer>
       <Space direction="vertical" align="center" style={{ width: "100%" }}>
-        <Typography.Text type="secondary">Make by</Typography.Text>
+        <Typography.Text type="secondary">Made by</Typography.Text>
         <Typography.Text type="secondary">
           Nguyen Tuan Khanh & Nguyen Quoc Anh
         </Typography.Text>
