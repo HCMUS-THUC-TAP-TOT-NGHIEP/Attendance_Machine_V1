@@ -28,10 +28,6 @@ const LoginPage = (props) => {
   }, []);
   const onSubmit = (values) => {
     setLoading(true);
-    var requestData = {
-      email: values.email,
-      password: values.password,
-    };
     LoginAccount(values)
       .then((response) => {
         const { Status, Description, ResponseData } = response;

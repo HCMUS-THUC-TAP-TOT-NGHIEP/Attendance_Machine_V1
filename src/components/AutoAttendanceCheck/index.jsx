@@ -1,7 +1,9 @@
 import React, { useEffect } from "react";
 import { Button, Col, Divider, Layout, Row, Space } from "antd";
+import { useNavigate } from "react-router";
 const { Content, Footer, Header } = Layout;
 const AutoAttendanceCheck = (props) => {
+  const navigate = useNavigate();
   useEffect(() => {
     document.title = "Máy chấm công";
   }, []);
@@ -19,9 +21,9 @@ const AutoAttendanceCheck = (props) => {
           <Footer>
             <Space>
               <Button>Chấm công mã NV</Button>
-              <Button>Đăng nhập</Button>
-              <Button>Đăng xuất</Button>
-              <Button>Đăng ký khuôn mặt</Button>
+              <Button onClick={() => navigate("/login")}>Đăng nhập</Button>
+              <Button onClick={null}>Đăng xuất</Button>
+              <Button onClick={()=>{navigate("/face/registration")}}>Đăng ký khuôn mặt</Button>
             </Space>
           </Footer>
         </Col>
