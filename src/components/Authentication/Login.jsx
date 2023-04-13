@@ -64,7 +64,15 @@ const LoginPage = (props) => {
       });
   };
   return (
-    <Layout style={{ height: "100vh" }}>
+    <Layout
+      style={{
+        height: "100vh",
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+      }}
+    >
       <Row
         style={{
           height: "inherit",

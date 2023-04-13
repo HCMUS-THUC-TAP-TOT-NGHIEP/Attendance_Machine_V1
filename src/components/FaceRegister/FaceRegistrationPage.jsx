@@ -1,15 +1,15 @@
-import {
-  ArrowLeftOutlined,
-  CameraFilled,
-  RollbackOutlined,
-  UndoOutlined,
-} from "@ant-design/icons";
-import { Button, Col, Image, Layout, Row, Space, Tooltip, theme } from "antd";
-import { Content, Header } from "antd/es/layout/layout";
+import { CameraFilled, UndoOutlined } from "@ant-design/icons";
+import { Button, Col, Image, Row, Space, Typography, theme } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import Webcam from "react-webcam";
+import dayjs from "dayjs";
+import "dayjs/locale/vi";
+import LocalizedFormat from "dayjs/plugin/localizedFormat";
 import Config from "../../config";
+import { MyClock } from "../layouts/Clock";
+dayjs.locale("vi");
+dayjs.extend(LocalizedFormat);
 
 const maximumImageRegister = Config.registrationImages;
 
@@ -27,10 +27,14 @@ const FaceRegistrationPage = function (props) {
     }
   });
   const {
-    token: { colorBgContainer },
+    token: { colorBgContainer, colorInfoActive },
   } = theme.useToken();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dateState, setDateState] = useState(dayjs());
+
   useEffect(() => {
     document.title = "Đăng ký khuôn mặt";
+    setInterval(() => setDateState(dayjs()), 1000);
   }, []);
 
   useEffect(() => {
@@ -39,24 +43,81 @@ const FaceRegistrationPage = function (props) {
 
   const registerFaceBE = () => {
     // todo: call api to register
-    notify.success({
-      message: "Thành công",
-    });
+    setIsSubmitting(true);
+    setTimeout(() => {
+      for (const based64Img of pictureList) {
+        console.log(based64Img);
+      }
+      setIsSubmitting(false);
+      notify.success({
+        message: "Thành công",
+      });
+    }, 2000);
   };
 
   return (
     <>
-      <Row justify={"center"} style={{ paddingTop: "20px" }}>
+      <Row justify="center">
         <Col key="col-1" md={16}>
+          <MyClock
+            containerStyle={{
+              padding: "10px",
+              position: "absolute",
+              top: 0,
+              left: 0,
+              background: colorInfoActive,
+            }}
+          />
           <Webcam
+            className="boxShadow89"
             style={{ width: "100%" }}
             audio={false}
             ref={webcamRef}
-            screenshotFormat="image/jpeg"
+            screenshotFormat="image/png"
             videoConstraints={Config.videoConstraints}
           ></Webcam>
+          <Space
+            direction="horizontal"
+            style={{
+              paddingTop: "15px",
+              justifyContent: "center",
+              width: "100%",
+            }}
+          >
+            <Button
+              type="primary"
+              icon={<CameraFilled />}
+              onClick={takePhoto}
+              disabled={pictureList.length >= maximumImageRegister}
+            >
+              Chụp ảnh
+            </Button>
+            <Button
+              type="primary"
+              icon={<CameraFilled />}
+              onClick={takePhoto}
+              disabled={pictureList.length >= maximumImageRegister}
+            >
+              Chụp ảnh tự động
+            </Button>
+            <Button
+              type="primary"
+              icon={<UndoOutlined />}
+              onClick={() => setPictureList([])}
+              disabled={pictureList.length == 0}
+            >
+              Chụp lại (Retake)
+            </Button>
+            <Button
+              type="primary"
+              onClick={registerFaceBE}
+              loading={isSubmitting}
+            >
+              Đăng ký khuôn mặt
+            </Button>
+          </Space>
         </Col>
-        <Col key="col-2" md={8}>
+        <Col key="col-2" md={8} style={{ paddingTop: "20px" }}>
           <Image.PreviewGroup>
             <Space
               size={[8, 16]}
@@ -75,38 +136,55 @@ const FaceRegistrationPage = function (props) {
           </Image.PreviewGroup>
         </Col>
       </Row>
-      <Row justify="center" gutter={24}>
-        <Space direction="horizontal" style={{ paddingTop: "15px" }}>
-          <Button
-            type="primary"
-            icon={<CameraFilled />}
-            onClick={takePhoto}
-            disabled={pictureList.length >= maximumImageRegister}
-          >
-            Chụp ảnh
-          </Button>
-          <Button
-            type="primary"
-            icon={<CameraFilled />}
-            onClick={takePhoto}
-            disabled={pictureList.length >= maximumImageRegister}
-          >
-            Chụp ảnh tự động
-          </Button>
-          <Button
-            type="primary"
-            icon={<UndoOutlined />}
-            onClick={() => setPictureList([])}
-            disabled={pictureList.length == 0}
-          >
-            Chụp lại (Retake)
-          </Button>
-          <Button type="primary" onClick={registerFaceBE}>
-            Đăng ký khuôn mặt
-          </Button>
-        </Space>
-      </Row>
     </>
   );
 };
+
+/*
+          <Space
+            direction="vertical"
+            align="center"
+            style={{
+              padding: "10px",
+              position: "absolute",
+              top: 0,
+              left: 0,
+              background: colorInfoActive,
+            }}
+          >
+            <Typography.Title
+              level={5}
+              style={{
+                margin: 0,
+                textTransform: "capitalize",
+                color: "white",
+              }}
+            >
+              {dateState.format("DD - MM - YYYY")}
+            </Typography.Title>
+            <Typography.Title
+              level={2}
+              style={{
+                margin: 0,
+                fontWeight: "bold",
+                textTransform: "capitalize",
+                color: "white",
+              }}
+            >
+              {dateState.format("HH:mm:ss")}
+            </Typography.Title>
+            <Typography.Title
+              level={3}
+              style={{
+                margin: 0,
+                fontWeight: "bold",
+                textTransform: "capitalize",
+                color: "white",
+              }}
+            >
+              {dateState.format("dddd")}
+            </Typography.Title>
+          </Space>
+
+*/
 export default FaceRegistrationPage;

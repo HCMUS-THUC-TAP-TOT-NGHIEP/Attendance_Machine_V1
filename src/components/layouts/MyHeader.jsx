@@ -6,10 +6,27 @@ import {
   PlusCircleOutlined,
   RollbackOutlined,
 } from "@ant-design/icons";
-import { Button, Col, Drawer, Menu, Row, Tooltip, theme } from "antd";
+import {
+  Button,
+  Col,
+  Drawer,
+  Layout,
+  Menu,
+  Row,
+  Space,
+  Tooltip,
+  Typography,
+  theme,
+} from "antd";
 import { Header } from "antd/es/layout/layout";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
+import "dayjs/locale/vi";
+import LocalizedFormat from "dayjs/plugin/localizedFormat";
+import Config from "../../config";
+dayjs.locale("vi");
+dayjs.extend(LocalizedFormat);
 
 const MyHeader = (props) => {
   const { notify } = props;
@@ -18,17 +35,26 @@ const MyHeader = (props) => {
   } = theme.useToken();
   const navigate = useNavigate();
   const [openSidebar, setOpenSideBar] = useState(false);
-
+  const [dateState, setDateState] = useState(dayjs());
   const showDrawer = () => {
     setOpenSideBar(true);
   };
   const onClose = () => {
     setOpenSideBar(false);
   };
+  useEffect(() => {
+    setInterval(() => setDateState(dayjs()), 1000);
+  }, []);
   return (
     <>
-      <Header style={{ background: colorBgContainer }} className="boxShadow17">
-        <Row wrap>
+      <Header
+        style={{
+          background: colorBgContainer,
+          zIndex: 10,
+        }}
+        className="boxShadow89"
+      >
+        <Row wrap align="middle">
           <Col flex="auto">
             <Tooltip title="Quay lại">
               <Button
@@ -38,6 +64,11 @@ const MyHeader = (props) => {
                 shape="round"
               />
             </Tooltip>
+          </Col>
+          <Col flex="auto">
+            <Typography.Title level={2} style={{ margin: 0 }}>
+              Máy chấm công
+            </Typography.Title>
           </Col>
           <Col flex="none">
             <Tooltip title="Menu">
