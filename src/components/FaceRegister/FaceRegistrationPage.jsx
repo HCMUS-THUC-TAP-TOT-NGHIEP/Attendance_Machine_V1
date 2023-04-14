@@ -1,5 +1,5 @@
 import { CameraFilled, UndoOutlined } from "@ant-design/icons";
-import { Button, Col, Image, Row, Space, theme } from "antd";
+import { Button, Col, Image, Row, Space, theme, Typography } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import Webcam from "react-webcam";
@@ -18,19 +18,15 @@ const FaceRegistrationPage = function (props) {
   const takePhoto = useCallback(async () => {
     const pictureSrc = await webcamRef.current.getScreenshot();
     setPictureList([...pictureList, pictureSrc]);
-  });
+  }, [pictureList]);
   const {
     token: { colorBgContainer, colorInfoActive },
   } = theme.useToken();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  let takePhotoInterval;
   useEffect(() => {
     document.title = "Đăng ký khuôn mặt";
   }, []);
-
-  useEffect(() => {
-    console.log(webcamRef.current.width);
-  }, [webcamRef]);
 
   const registerFaceBE = async () => {
     // todo: call api to register
@@ -66,24 +62,28 @@ const FaceRegistrationPage = function (props) {
     }
   };
 
-  const autoTakePhoto = async () => {
-    var tempList = [];
-    var takePhotoInterval = setInterval(() => {
-      console.log("AutoTakePhoto");
-      if (tempList.length < maximumImageRegister - pictureList.length) {
-        let pictureSrc = webcamRef.current.getScreenshot();
-        tempList.push(pictureSrc);
-        return;
-      }
-      setPictureList(tempList);
+  const autoTakePhoto = () => {
+    // var tempList = [];
+    takePhotoInterval =
+      !takePhotoInterval &&
+      setInterval(() => {
+        console.log("AutoTakePhoto");
+        takePhoto();
+      }, 300);
+    if (pictureList.length >= maximumImageRegister) {
+      console.log("stop!");
       clearInterval(takePhotoInterval);
-    }, 100);
+    }
   };
-  const manualTakePhoto = () => {};
+
+  useEffect(() => {
+    autoTakePhoto();
+    return () => clearInterval(takePhotoInterval);
+  }, [pictureList]);
 
   return (
     <Row justify="center" style={{ padding: "5px" }}>
-      <Col key="col-1" md={16}>
+      <Col key="col-1" md={14}>
         <MyClock
           containerStyle={{
             padding: "10px",
@@ -98,6 +98,7 @@ const FaceRegistrationPage = function (props) {
           style={{ width: "100%" }}
           audio={false}
           ref={webcamRef}
+          // height={600}
           screenshotFormat="image/png"
           videoConstraints={Config.videoConstraints}
         ></Webcam>
@@ -109,14 +110,14 @@ const FaceRegistrationPage = function (props) {
             width: "100%",
           }}
         >
-          <Button
+          {/* <Button
             type="primary"
             icon={<CameraFilled />}
             onClick={takePhoto}
             disabled={pictureList.length >= maximumImageRegister}
           >
             Chụp ảnh
-          </Button>
+          </Button> */}
           <Button
             type="primary"
             icon={<CameraFilled />}
@@ -137,12 +138,18 @@ const FaceRegistrationPage = function (props) {
             type="primary"
             onClick={registerFaceBE}
             loading={isSubmitting}
+            disabled={pictureList.length < maximumImageRegister}
           >
             Đăng ký khuôn mặt
           </Button>
         </Space>
       </Col>
-      <Col key="col-2" md={8} style={{ paddingTop: "20px" }}>
+      <Col key="col-2" md={10}>
+        <div align="center" style={{ padding: "5px" }}>
+          <Typography.Text strong>
+            {pictureList.length}/{maximumImageRegister}
+          </Typography.Text>
+        </div>
         <Image.PreviewGroup>
           <Space
             size={[8, 16]}
@@ -155,8 +162,28 @@ const FaceRegistrationPage = function (props) {
             wrap
           >
             {pictureList.map((rec, index) => {
-              return <Image key={index} width={200} src={rec} />;
+              return (
+                <Image
+                  key={index}
+                  height={100}
+                  src={rec}
+                  className="boxShadow89"
+                />
+              );
             })}
+            {Array(maximumImageRegister - pictureList.length)
+              .fill(0)
+              .map((_, index) => {
+                return (
+                  <Image
+                    key={index + pictureList.length}
+                    height={100}
+                    width={1600 / 9}
+                    src={Config.ImagePlaceHolder}
+                    className="boxShadow89"
+                  />
+                );
+              })}
           </Space>
         </Image.PreviewGroup>
       </Col>

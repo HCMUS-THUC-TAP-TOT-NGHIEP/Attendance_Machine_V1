@@ -1,21 +1,18 @@
-import { Layout, Space, Typography, theme } from "antd";
+import { Space, Typography } from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
 import React, { useEffect, useState } from "react";
 dayjs.locale("vi");
 dayjs.extend(LocalizedFormat);
-const { Content } = Layout;
 
 const MyClock = (props) => {
   const { containerStyle } = props;
   const [dateState, setDateState] = useState(dayjs());
-  const {
-    token: { colorInfoActive },
-  } = theme.useToken();
 
   useEffect(() => {
-    setInterval(() => setDateState(dayjs()), 1000);
+    const timer = setInterval(() => setDateState(dayjs()), 1000);
+    return () => clearInterval(timer);
   }, []);
   return (
     <Space direction="vertical" align="center" style={containerStyle}>
