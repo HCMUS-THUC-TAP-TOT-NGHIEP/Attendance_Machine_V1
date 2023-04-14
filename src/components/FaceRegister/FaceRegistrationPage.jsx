@@ -45,21 +45,25 @@ const FaceRegistrationPage = function (props) {
         message: "Thành công",
       });
     } catch (error) {
-      notify.error({
-        message: "FAILED",
-      });
+      if (error.response) {
+        notify.error({
+          message: "Có lỗi ở response.",
+          description: `[${error.response.statusText}]`,
+        });
+      } else if (error.request) {
+        notify.error({
+          message: "Có lỗi ở request.",
+          description: error,
+        });
+      } else {
+        notify.error({
+          message: "Có lỗi ở máy khách",
+          description: error.message,
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
-    // setTimeout(() => {
-    //   for (const based64Img of pictureList) {
-    //     console.log(based64Img);
-    //   }
-    //   setIsSubmitting(false);
-    //   notify.success({
-    //     message: "Thành công",
-    //   });
-    // }, 2000);
   };
 
   const autoTakePhoto = async () => {
@@ -78,7 +82,7 @@ const FaceRegistrationPage = function (props) {
   const manualTakePhoto = () => {};
 
   return (
-    <Row justify="center">
+    <Row justify="center" style={{ padding: "5px" }}>
       <Col key="col-1" md={16}>
         <MyClock
           containerStyle={{
