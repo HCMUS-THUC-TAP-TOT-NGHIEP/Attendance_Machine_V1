@@ -19,4 +19,29 @@ const RegisterFaceBE = async (requestData) => {
   return response.data;
 };
 
-export { RegisterFaceBE };
+const LoadingDepartmentBE = async () => {
+  var response = await AxiosInstance.get(
+    "api/attendance_machine/department/load",
+    {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
+    }
+  );
+  return response.data;
+};
+
+const LoadingEmployeeBE = async (requestData) => {
+  var response = await AxiosInstance.post(
+    "api/attendance_machine/employee/load",
+    requestData,
+    {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
+    }
+  );
+  return response.data;
+};
+
+export { RegisterFaceBE, LoadingDepartmentBE, LoadingEmployeeBE };

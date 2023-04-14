@@ -1,12 +1,25 @@
 import { CameraFilled, UndoOutlined } from "@ant-design/icons";
-import { Button, Col, Image, Row, Space, theme, Typography } from "antd";
+import {
+  Button,
+  Col,
+  Divider,
+  Form,
+  Image,
+  Row,
+  Select,
+  Space,
+  Tabs,
+  Tooltip,
+  Typography,
+  theme,
+} from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import Webcam from "react-webcam";
 import Config from "../../config";
 import { MyClock } from "../layouts/Clock";
-import { RegisterFaceBE } from "./api";
-
+import { LoadingDepartmentBE, LoadingEmployeeBE, RegisterFaceBE } from "./api";
+const { Option } = Select;
 const maximumImageRegister = Config.registrationImages;
 
 const FaceRegistrationPage = function (props) {
@@ -15,21 +28,23 @@ const FaceRegistrationPage = function (props) {
   const [pictureList, setPictureList] = useState([]);
   const [employeeId, setEmployeeId] = useState(null);
   const webcamRef = useRef(null);
+  const [tabKey, setTabKey] = useState(1);
   const takePhoto = useCallback(async () => {
-    const pictureSrc = await webcamRef.current.getScreenshot();
-    setPictureList([...pictureList, pictureSrc]);
-  }, [pictureList]);
+    if (webcamRef && webcamRef.current) {
+      const pictureSrc = await webcamRef.current.getScreenshot();
+      setPictureList([...pictureList, pictureSrc]);
+    }
+    return;
+  }, []);
   const {
-    token: { colorBgContainer, colorInfoActive },
+    token: { colorBgContainer, colorInfoActive, colorSuccessActive },
   } = theme.useToken();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  let takePhotoInterval;
   useEffect(() => {
     document.title = "Đăng ký khuôn mặt";
   }, []);
 
   const registerFaceBE = async () => {
-    // todo: call api to register
     setIsSubmitting(true);
     try {
       var requestData = {
@@ -37,8 +52,15 @@ const FaceRegistrationPage = function (props) {
         EmployeeId: employeeId,
       };
       var res = await RegisterFaceBE(requestData);
-      notify.success({
-        message: "Thành công",
+      if (res.Status === 1) {
+        notify.success({
+          message: "Thành công",
+        });
+        return;
+      }
+      notify.error({
+        message: "Đăng ký không thành công",
+        description: res.Description,
       });
     } catch (error) {
       if (error.response) {
@@ -63,179 +85,371 @@ const FaceRegistrationPage = function (props) {
   };
 
   const autoTakePhoto = () => {
-    // var tempList = [];
-    takePhotoInterval =
-      !takePhotoInterval &&
-      setInterval(() => {
-        console.log("AutoTakePhoto");
-        takePhoto();
-      }, 300);
+    /*
+    if (takePhotoInterval) {
+      return;
+    }
+    takePhotoInterval = setInterval(() => {
+      console.log("AutoTakePhoto");
+      // console.log(intervalId);
+      // if (pictureList.length >= maximumImageRegister) {
+      //   console.log("stop!");
+      //   clearInterval(newIntervalId);
+      //   return;
+      // }
+      // takePhoto();
+      const pictureSrc = webcamRef.current.getScreenshot();
+      setPictureList([...pictureList, pictureSrc]);
+    }, 300);
     if (pictureList.length >= maximumImageRegister) {
       console.log("stop!");
       clearInterval(takePhotoInterval);
+      return;
+    }
+    */
+    // if (pictureList.length >= maximumImageRegister) {
+    //   console.log("stop!");
+    //   clearInterval(intervalId);
+    //   return;
+    // }
+    // if (intervalId) {
+    //   clearInterval(intervalId);
+    //   setIntervalId(0);
+    //   return;
+    // }
+    // const newIntervalId = setInterval(() => {
+    //   if (webcamRef && webcamRef.current) {
+    //     const pictureSrc = webcamRef.current.getScreenshot();
+    //     setPictureList((pictureList) => [...pictureList, pictureSrc]);
+    //   }
+    // }, 1000);
+    // setIntervalId(newIntervalId);
+    if (webcamRef && webcamRef.current) {
+      const pictureSrc = webcamRef.current.getScreenshot();
+      setPictureList((pictureList) => [...pictureList, pictureSrc]);
     }
   };
 
   useEffect(() => {
-    autoTakePhoto();
-    return () => clearInterval(takePhotoInterval);
+    if (pictureList.length == 0) return;
+    if (pictureList.length >= maximumImageRegister) {
+      console.log("stop!");
+      // clearInterval(intervalId);
+      return;
+    }
+    console.log("Auto capture");
+    const newIntervalId = setInterval(() => autoTakePhoto(), 300);
+    return () => clearInterval(newIntervalId);
   }, [pictureList]);
 
   return (
-    <Row justify="center" style={{ padding: "5px" }}>
-      <Col key="col-1" md={14}>
-        <MyClock
-          containerStyle={{
-            padding: "10px",
-            position: "absolute",
-            top: 0,
-            left: 0,
-            background: colorInfoActive,
-          }}
-        />
-        <Webcam
-          className="boxShadow89"
-          style={{ width: "100%" }}
-          audio={false}
-          ref={webcamRef}
-          // height={600}
-          screenshotFormat="image/png"
-          videoConstraints={Config.videoConstraints}
-        ></Webcam>
-        <Space
-          direction="horizontal"
-          style={{
-            paddingTop: "15px",
-            justifyContent: "center",
-            width: "100%",
-          }}
-        >
-          {/* <Button
-            type="primary"
-            icon={<CameraFilled />}
-            onClick={takePhoto}
-            disabled={pictureList.length >= maximumImageRegister}
-          >
-            Chụp ảnh
-          </Button> */}
+    <>
+      <Tabs
+        activeKey={tabKey}
+        type="card"
+        centered
+        tabBarStyle={{ marginTop: "5px" }}
+        onChange={(activeKey) => {
+          setTabKey(activeKey);
+        }}
+        items={[
+          {
+            key: 1,
+            label: "Nhân viên",
+            children: (
+              <SelectUserForm
+                setEmployeeForRegisterFace={setEmployeeId}
+                notify={notify}
+              />
+            ),
+          },
+          {
+            key: 2,
+            label: "Khuôn mặt",
+            children: (
+              <Row justify="center" style={{ padding: "5px" }}>
+                <Col key="col-1" md={14}>
+                  <MyClock
+                    containerStyle={{
+                      padding: "10px",
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      background: colorInfoActive,
+                    }}
+                  />
+                  <Webcam
+                    className="boxShadow89"
+                    style={{ width: "100%" }}
+                    audio={false}
+                    ref={webcamRef}
+                    // height={600}
+                    screenshotFormat="image/png"
+                    videoConstraints={Config.videoConstraints}
+                  ></Webcam>
+                  <Space
+                    direction="horizontal"
+                    style={{
+                      paddingTop: "15px",
+                      justifyContent: "center",
+                      width: "100%",
+                    }}
+                  >
+                    <Tooltip title="Bắt đầu chụp ảnh tự động">
+                      <Button
+                        type="primary"
+                        icon={<CameraFilled />}
+                        shape="circle"
+                        onClick={autoTakePhoto}
+                        disabled={pictureList.length >= maximumImageRegister}
+                      />
+                    </Tooltip>
+                    <Tooltip title="Chụp lại (Retake)">
+                      <Button
+                        type="primary"
+                        icon={<UndoOutlined />}
+                        onClick={() => setPictureList([])}
+                        disabled={pictureList.length == 0}
+                      />
+                    </Tooltip>
+                  </Space>
+                </Col>
+                <Col key="col-2" md={10}>
+                  <Image.PreviewGroup>
+                    <Space
+                      size={[8, 16]}
+                      align="center"
+                      style={{
+                        width: "100%",
+                        justifyContent: "center",
+                        WebkitJustifyContent: "center",
+                      }}
+                      wrap
+                    >
+                      {pictureList.map((rec, index) => {
+                        return (
+                          <Image
+                            key={index}
+                            height={100}
+                            src={rec}
+                            className="boxShadow89"
+                          />
+                        );
+                      })}
+                      {Array(maximumImageRegister - pictureList.length)
+                        .fill(0)
+                        .map((_, index) => {
+                          return (
+                            <Image
+                              key={index + pictureList.length}
+                              height={100}
+                              width={1600 / 9}
+                              src={Config.ImagePlaceHolder}
+                              className="boxShadow89"
+                            />
+                          );
+                        })}
+                    </Space>
+                  </Image.PreviewGroup>
+                  <div align="center" style={{ padding: "5px" }}>
+                    <Typography.Text strong>
+                      Đã chụp {pictureList.length}/{maximumImageRegister} ảnh
+                    </Typography.Text>
+                  </div>
+                </Col>
+              </Row>
+            ),
+          },
+        ]}
+      />
+      <Divider />
+      <div style={{ textAlign: "center" }}>
+        <Space>
+          {tabKey == 1 ? (
+            <Button
+              type="primary"
+              onClick={() => {
+                setTabKey(2);
+              }}
+            >
+              Chuyển sang đăng ký khuôn mặt
+            </Button>
+          ) : (
+            <>
+              <Button
+                type="primary"
+                onClick={() => {
+                  setTabKey(1);
+                }}
+              >
+                Quay lại
+              </Button>
+              <Button
+                type="primary"
+                onClick={registerFaceBE}
+                loading={isSubmitting}
+                disabled={
+                  pictureList.length < maximumImageRegister || !employeeId
+                }
+              >
+                Đăng ký khuôn mặt
+              </Button>
+            </>
+          )}
           <Button
             type="primary"
-            icon={<CameraFilled />}
-            onClick={autoTakePhoto}
-            disabled={pictureList.length >= maximumImageRegister}
+            danger
+            onClick={() => {
+              navigate(-1);
+            }}
           >
-            Chụp ảnh tự động
-          </Button>
-          <Button
-            type="primary"
-            icon={<UndoOutlined />}
-            onClick={() => setPictureList([])}
-            disabled={pictureList.length == 0}
-          >
-            Chụp lại (Retake)
-          </Button>
-          <Button
-            type="primary"
-            onClick={registerFaceBE}
-            loading={isSubmitting}
-            disabled={pictureList.length < maximumImageRegister}
-          >
-            Đăng ký khuôn mặt
+            Hủy
           </Button>
         </Space>
-      </Col>
-      <Col key="col-2" md={10}>
-        <div align="center" style={{ padding: "5px" }}>
-          <Typography.Text strong>
-            {pictureList.length}/{maximumImageRegister}
-          </Typography.Text>
-        </div>
-        <Image.PreviewGroup>
-          <Space
-            size={[8, 16]}
-            align="center"
-            style={{
-              width: "100%",
-              justifyContent: "center",
-              WebkitJustifyContent: "center",
-            }}
-            wrap
-          >
-            {pictureList.map((rec, index) => {
-              return (
-                <Image
-                  key={index}
-                  height={100}
-                  src={rec}
-                  className="boxShadow89"
-                />
-              );
-            })}
-            {Array(maximumImageRegister - pictureList.length)
-              .fill(0)
-              .map((_, index) => {
-                return (
-                  <Image
-                    key={index + pictureList.length}
-                    height={100}
-                    width={1600 / 9}
-                    src={Config.ImagePlaceHolder}
-                    className="boxShadow89"
-                  />
-                );
-              })}
-          </Space>
-        </Image.PreviewGroup>
-      </Col>
-    </Row>
+      </div>
+    </>
   );
 };
 
-/*
-          <Space
-            direction="vertical"
-            align="center"
-            style={{
-              padding: "10px",
-              position: "absolute",
-              top: 0,
-              left: 0,
-              background: colorInfoActive,
-            }}
+const SelectUserForm = (props) => {
+  const { setEmployeeForRegisterFace, notify } = props;
+  const [departmentId, setDepartmentId] = useState(null);
+  const [departmentList, setDepartmentList] = useState([]);
+  const [employeeList, setEmployeeList] = useState([]);
+  const [loadingDepartment, setLoadingDepartment] = useState(false);
+  const [loadingEmployee, setLoadingEmployee] = useState(false);
+  useEffect(() => {
+    const loadDepartment = async () => {
+      setLoadingDepartment(true);
+      try {
+        var res1 = await LoadingDepartmentBE();
+        if (res1.Status === 1) {
+          setDepartmentList(res1.ResponseData);
+          return;
+        }
+        notify.error({
+          message: "Không lấy được dữ liệu phòng ban",
+          description: res1.Description,
+        });
+      } catch (error) {
+        if (error.response) {
+          notify.error({
+            message: "Có lỗi ở response.",
+            description: `[${error.response.statusText}]`,
+          });
+        } else if (error.request) {
+          notify.error({
+            message: "Có lỗi ở request.",
+            description: error,
+          });
+        } else {
+          notify.error({
+            message: "Có lỗi ở máy khách",
+            description: error.message,
+          });
+        }
+      } finally {
+        setLoadingDepartment(false);
+      }
+      return;
+    };
+    loadDepartment();
+  }, []);
+  useEffect(() => {
+    const loadEmployeeList = async () => {
+      setLoadingEmployee(true);
+      try {
+        var requestData = {
+          DepartmentId: departmentId,
+        };
+        var res1 = await LoadingEmployeeBE(requestData);
+        if (res1.Status === 1) {
+          setEmployeeList(res1.ResponseData);
+          return;
+        }
+        notify.error({
+          message: "Không lấy được dữ liệu nhân viên",
+          description: res1.Description,
+        });
+      } catch (error) {
+        if (error.response) {
+          notify.error({
+            message: "Có lỗi ở response.",
+            description: `[${error.response.statusText}]`,
+          });
+        } else if (error.request) {
+          notify.error({
+            message: "Có lỗi ở request.",
+            description: error,
+          });
+        } else {
+          notify.error({
+            message: "Có lỗi ở máy khách",
+            description: error.message,
+          });
+        }
+      } finally {
+        setLoadingEmployee(false);
+      }
+      return;
+    };
+    loadEmployeeList();
+  }, [departmentId]);
+  return (
+    <>
+      <Row justify={"center"}>
+        <Typography.Title level={2}>Nhân viên</Typography.Title>
+      </Row>
+      <Row justify={"center"}>
+        <Form style={{ width: "600px", maxWidth: "100%" }}>
+          <Form.Item label="Phòng ban" name="DepartmentId">
+            <Select
+              showSearch={true}
+              loading={loadingDepartment}
+              onChange={(value, option) => {
+                setDepartmentId(option.label);
+              }}
+            >
+              <Option key={-1} label={null} value="Tất cả" />
+              {departmentList.map((department, index) => (
+                <Option
+                  key={index}
+                  label={department.Id}
+                  value={`${department.Id} - ${department.Name}`}
+                ></Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            label="Nhân viên"
+            name="EmployeeId"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng chọn nhân viên",
+              },
+            ]}
           >
-            <Typography.Title
-              level={5}
-              style={{
-                margin: 0,
-                textTransform: "capitalize",
-                color: "white",
+            <Select
+              showSearch
+              loading={loadingEmployee}
+              onChange={(value, option) => {
+                setEmployeeForRegisterFace(option.label);
               }}
             >
-              {dateState.format("DD - MM - YYYY")}
-            </Typography.Title>
-            <Typography.Title
-              level={2}
-              style={{
-                margin: 0,
-                fontWeight: "bold",
-                textTransform: "capitalize",
-                color: "white",
-              }}
-            >
-              {dateState.format("HH:mm:ss")}
-            </Typography.Title>
-            <Typography.Title
-              level={3}
-              style={{
-                margin: 0,
-                fontWeight: "bold",
-                textTransform: "capitalize",
-                color: "white",
-              }}
-            >
-              {dateState.format("dddd")}
-            </Typography.Title>
-          </Space>
+              {employeeList.map((employee, index) => (
+                <Option
+                  key={index}
+                  label={employee.Id}
+                  value={`${employee.Id} - ${employee.LastName} ${employee.FirstName}`}
+                ></Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Form>
+      </Row>
+    </>
+  );
+};
 
-*/
 export default FaceRegistrationPage;
