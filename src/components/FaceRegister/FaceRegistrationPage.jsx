@@ -5,6 +5,7 @@ import { useNavigate } from "react-router";
 import Webcam from "react-webcam";
 import Config from "../../config";
 import { MyClock } from "../layouts/Clock";
+import { RegisterFaceBE } from "./api";
 
 const maximumImageRegister = Config.registrationImages;
 
@@ -12,6 +13,7 @@ const FaceRegistrationPage = function (props) {
   const { notify } = props;
   const navigate = useNavigate();
   const [pictureList, setPictureList] = useState([]);
+  const [employeeId, setEmployeeId] = useState(null);
   const webcamRef = useRef(null);
   const takePhoto = useCallback(async () => {
     const pictureSrc = await webcamRef.current.getScreenshot();
@@ -30,18 +32,34 @@ const FaceRegistrationPage = function (props) {
     console.log(webcamRef.current.width);
   }, [webcamRef]);
 
-  const registerFaceBE = () => {
+  const registerFaceBE = async () => {
     // todo: call api to register
     setIsSubmitting(true);
-    setTimeout(() => {
-      for (const based64Img of pictureList) {
-        console.log(based64Img);
-      }
-      setIsSubmitting(false);
+    try {
+      var requestData = {
+        PictureList: pictureList,
+        EmployeeId: employeeId,
+      };
+      var res = await RegisterFaceBE(requestData);
       notify.success({
         message: "Thành công",
       });
-    }, 2000);
+    } catch (error) {
+      notify.error({
+        message: "FAILED",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+    // setTimeout(() => {
+    //   for (const based64Img of pictureList) {
+    //     console.log(based64Img);
+    //   }
+    //   setIsSubmitting(false);
+    //   notify.success({
+    //     message: "Thành công",
+    //   });
+    // }, 2000);
   };
 
   const autoTakePhoto = async () => {

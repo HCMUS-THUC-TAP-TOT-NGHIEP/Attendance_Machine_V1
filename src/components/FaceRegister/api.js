@@ -10,3 +10,13 @@ let AxiosInstance = axios.create({
   },
 });
 
+const RegisterFaceBE = async (requestData) => {
+  var response = await AxiosInstance.post("api/face/register", requestData, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+    },
+  });
+  return response.data;
+};
+
+export { RegisterFaceBE };
