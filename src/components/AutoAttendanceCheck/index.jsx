@@ -17,6 +17,7 @@ const AutoAttendanceCheck = (props) => {
   const navigate = useNavigate();
   const webcamRef = useRef(null);
   const [picture, setPicture] = useState(null);
+  const [stopped, setStopped] = useState(false);
   const {
     token: { colorInfoActive },
   } = theme.useToken();
@@ -27,34 +28,46 @@ const AutoAttendanceCheck = (props) => {
   //   }
   // }, [picture]);
   const autoTakePhoto = async () => {
-    if (webcamRef && webcamRef.current) {
-      const pictureSrc = webcamRef.current.getScreenshot();
-      setPicture(pictureSrc);
-      console.log(pictureSrc);
-      try {
-        var response = await AutoFaceRecognitionBE({ Picture: pictureSrc });
-        if (response.Status === 1) {
-
+    if (!stopped) {
+      if (webcamRef && webcamRef.current) {
+        const pictureSrc = webcamRef.current.getScreenshot();
+        setPicture(pictureSrc);
+        try {
+          if (pictureSrc) {
+            var response = await AutoFaceRecognitionBE({ Picture: pictureSrc });
+            if (response.Status === 1) {
+              console.log(response.ResponseData);
+              const { Id, Name } = response.ResponseData;
+              notify.success({
+                message: "Thành công",
+                description: `Nhân viên ${Id} - ${Name}`,
+              });
+            } else {
+              notify.error({
+                message: "Có lỗi",
+                description: response.Description,
+              });
+            }
+          }
+        } catch (error) {
+          if (error.response) {
+            notify.error({
+              message: "Có lỗi ở response.",
+              description: `[${error.response.statusText}]`,
+            });
+          } else if (error.request) {
+            notify.error({
+              message: "Có lỗi ở request.",
+              description: error,
+            });
+          } else {
+            notify.error({
+              message: "Có lỗi ở máy khách",
+              description: error.message,
+            });
+          }
+        } finally {
         }
-        
-      } catch (error) {
-        if (error.response) {
-          notify.error({
-            message: "Có lỗi ở response.",
-            description: `[${error.response.statusText}]`,
-          });
-        } else if (error.request) {
-          notify.error({
-            message: "Có lỗi ở request.",
-            description: error,
-          });
-        } else {
-          notify.error({
-            message: "Có lỗi ở máy khách",
-            description: error.message,
-          });
-        }
-      } finally {
       }
     }
     setTimeout(autoTakePhoto, 10000); //10s
@@ -64,7 +77,7 @@ const AutoAttendanceCheck = (props) => {
   useEffect(() => {
     document.title = "Máy chấm công";
     autoTakePhoto();
-  }, [notify]);
+  }, []);
 
   // useEffect(() => {
   // }, [picture, notify]);

@@ -5,7 +5,7 @@ var Config = {
   timeFormat: "HH:mm:ss",
   timestampFormat: "DD/MM/YYYY HH:mm:ss",
   fullTimestampFormat: "dddd, DD - MM - YYYY HH:mm:ss",
-  registrationImages: 5,
+  registrationImages: 10,
   videoConstraints: {
     width: { min: 480 },
     height: { min: 720 },
