@@ -29,13 +29,13 @@ const FaceRegistrationPage = function (props) {
   const [employeeId, setEmployeeId] = useState(null);
   const webcamRef = useRef(null);
   const [tabKey, setTabKey] = useState(1);
-  const takePhoto = useCallback(async () => {
-    if (webcamRef && webcamRef.current) {
-      const pictureSrc = await webcamRef.current.getScreenshot();
-      setPictureList([...pictureList, pictureSrc]);
-    }
-    return;
-  }, []);
+  // const takePhoto = useCallback(async () => {
+  //   if (webcamRef && webcamRef.current) {
+  //     const pictureSrc = await webcamRef.current.getScreenshot();
+  //     setPictureList([...pictureList, pictureSrc]);
+  //   }
+  //   return;
+  // }, []);
   const {
     token: { colorBgContainer, colorInfoActive, colorSuccessActive },
   } = theme.useToken();
@@ -85,45 +85,6 @@ const FaceRegistrationPage = function (props) {
   };
 
   const autoTakePhoto = () => {
-    /*
-    if (takePhotoInterval) {
-      return;
-    }
-    takePhotoInterval = setInterval(() => {
-      console.log("AutoTakePhoto");
-      // console.log(intervalId);
-      // if (pictureList.length >= maximumImageRegister) {
-      //   console.log("stop!");
-      //   clearInterval(newIntervalId);
-      //   return;
-      // }
-      // takePhoto();
-      const pictureSrc = webcamRef.current.getScreenshot();
-      setPictureList([...pictureList, pictureSrc]);
-    }, 300);
-    if (pictureList.length >= maximumImageRegister) {
-      console.log("stop!");
-      clearInterval(takePhotoInterval);
-      return;
-    }
-    */
-    // if (pictureList.length >= maximumImageRegister) {
-    //   console.log("stop!");
-    //   clearInterval(intervalId);
-    //   return;
-    // }
-    // if (intervalId) {
-    //   clearInterval(intervalId);
-    //   setIntervalId(0);
-    //   return;
-    // }
-    // const newIntervalId = setInterval(() => {
-    //   if (webcamRef && webcamRef.current) {
-    //     const pictureSrc = webcamRef.current.getScreenshot();
-    //     setPictureList((pictureList) => [...pictureList, pictureSrc]);
-    //   }
-    // }, 1000);
-    // setIntervalId(newIntervalId);
     if (webcamRef && webcamRef.current) {
       const pictureSrc = webcamRef.current.getScreenshot();
       setPictureList((pictureList) => [...pictureList, pictureSrc]);
@@ -396,11 +357,11 @@ const SelectUserForm = (props) => {
     loadEmployeeList();
   }, [departmentId]);
   return (
-    <>
-      <Row justify={"center"}>
+    <div>
+      <Row key="1" justify={"center"}>
         <Typography.Title level={2}>Nhân viên</Typography.Title>
       </Row>
-      <Row justify={"center"}>
+      <Row key="2" justify={"center"}>
         <Form style={{ width: "600px", maxWidth: "100%" }}>
           <Form.Item label="Phòng ban" name="DepartmentId">
             <Select
@@ -448,7 +409,7 @@ const SelectUserForm = (props) => {
           </Form.Item>
         </Form>
       </Row>
-    </>
+    </div>
   );
 };
 

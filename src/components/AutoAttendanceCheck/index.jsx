@@ -2,11 +2,12 @@ import { Col, Divider, Layout, Row, theme } from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import Webcam from "react-webcam";
 import Config from "../../config";
 import { MyClock } from "../layouts/Clock";
+import { AutoFaceRecognitionBE } from "./api";
 dayjs.locale("vi");
 dayjs.extend(LocalizedFormat);
 const { Content } = Layout;
@@ -15,12 +16,58 @@ const AutoAttendanceCheck = (props) => {
   const { notify } = props;
   const navigate = useNavigate();
   const webcamRef = useRef(null);
+  const [picture, setPicture] = useState(null);
   const {
     token: { colorInfoActive },
   } = theme.useToken();
+  // const takePhoto = useRef(() => {
+  //   if (webcamRef && webcamRef.current) {
+  //     const pictureSrc = webcamRef.current.getScreenshot();
+  //     setPicture(pictureSrc);
+  //   }
+  // }, [picture]);
+  const autoTakePhoto = async () => {
+    if (webcamRef && webcamRef.current) {
+      const pictureSrc = webcamRef.current.getScreenshot();
+      setPicture(pictureSrc);
+      console.log(pictureSrc);
+      try {
+        var response = await AutoFaceRecognitionBE({ Picture: pictureSrc });
+        if (response.Status === 1) {
+
+        }
+        
+      } catch (error) {
+        if (error.response) {
+          notify.error({
+            message: "Có lỗi ở response.",
+            description: `[${error.response.statusText}]`,
+          });
+        } else if (error.request) {
+          notify.error({
+            message: "Có lỗi ở request.",
+            description: error,
+          });
+        } else {
+          notify.error({
+            message: "Có lỗi ở máy khách",
+            description: error.message,
+          });
+        }
+      } finally {
+      }
+    }
+    setTimeout(autoTakePhoto, 10000); //10s
+    // setTimeout(autoTakePhoto, 1000);
+  };
+
   useEffect(() => {
     document.title = "Máy chấm công";
-  }, []);
+    autoTakePhoto();
+  }, [notify]);
+
+  // useEffect(() => {
+  // }, [picture, notify]);
 
   return (
     <Row wrap={false}>
@@ -39,7 +86,7 @@ const AutoAttendanceCheck = (props) => {
           style={{ width: "100%" }}
           audio={false}
           ref={webcamRef}
-          screenshotFormat="image/jpeg"
+          screenshotFormat="image/png"
           videoConstraints={Config.videoConstraints}
         ></Webcam>
       </Col>

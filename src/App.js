@@ -35,9 +35,9 @@ function App() {
           </Route>
           <Route path="*" element={<NoMatch notify={notify} />} />
         </Routes>
-        {contextHolder}
       </Content>
       <MyFooter />
+      {contextHolder}
     </Layout>
   );
 }
