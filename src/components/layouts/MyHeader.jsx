@@ -45,6 +45,7 @@ const MyHeader = (props) => {
     const accessToken = localStorage.getItem("access_token");
     localStorage.removeItem("access_token");
     Logout2(dispatch, accessToken);
+    navigate("/login");
   };
   const menuItems = userDetails.token
     ? {

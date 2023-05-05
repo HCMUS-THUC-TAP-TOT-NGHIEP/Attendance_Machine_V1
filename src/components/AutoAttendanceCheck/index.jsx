@@ -54,7 +54,6 @@ const AutoAttendanceCheck = (props) => {
                         <Avatar
                           shape="square"
                           src={`data:image/png;base64,${Img}`}
-                          dot={true}
                           size={{
                             xs: 24,
                             sm: 32,
