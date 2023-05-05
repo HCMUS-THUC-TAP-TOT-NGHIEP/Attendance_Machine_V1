@@ -1,20 +1,15 @@
 import {
   Avatar,
   Button,
-  Col,
-  Divider,
   Form,
-  Image,
   Input,
   Layout,
   List,
-  Row,
-  Space,
-  Switch,
   Typography,
   notification,
-  theme,
+  theme
 } from "antd";
+import Sider from "antd/es/layout/Sider";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
@@ -24,7 +19,6 @@ import Webcam from "react-webcam";
 import Config from "../../config";
 import { MyClock } from "../layouts/Clock";
 import { AutoFaceRecognitionBE } from "./api";
-import Sider from "antd/es/layout/Sider";
 dayjs.locale("vi");
 dayjs.extend(LocalizedFormat);
 const { Content } = Layout;
@@ -60,7 +54,7 @@ const AutoAttendanceCheck = (props) => {
                         <Avatar
                           shape="square"
                           src={`data:image/png;base64,${Img}`}
-                          dot
+                          dot={true}
                           size={{
                             xs: 24,
                             sm: 32,
@@ -78,7 +72,7 @@ const AutoAttendanceCheck = (props) => {
                 </List>
               ),
               placement: "bottomLeft",
-              duration: 60
+              duration: 60,
             });
           } else {
             setPicture(null);
@@ -192,3 +186,4 @@ const AutoAttendanceCheck = (props) => {
 };
 
 export { AutoAttendanceCheck };
+

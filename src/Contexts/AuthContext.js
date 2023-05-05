@@ -7,8 +7,8 @@ const AuthDispatchContext = React.createContext();
 let user = localStorage.getItem("currentUser")
   ? JSON.parse(localStorage.getItem("currentUser")).user
   : "";
-let token = localStorage.getItem("currentUser")
-  ? JSON.parse(localStorage.getItem("currentUser")).auth_token
+let token = localStorage.getItem("access_token")
+  ? localStorage.getItem("access_token")
   : "";
 
 export const initialState = {
@@ -36,7 +36,7 @@ export function useAuthDispatch() {
 
 export const AuthProvider = ({ children }) => {
   const [user, dispatch] = useReducer(AuthReducer, initialState);
-
+  
   return (
     <AuthStateContext.Provider value={user}>
       <AuthDispatchContext.Provider value={dispatch}>

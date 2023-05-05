@@ -12,7 +12,8 @@ import {
 import { Content } from "antd/es/layout/layout";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { LoginAccount } from "./api";
+import { LoginAccount, LoginAccount2 } from "./api";
+import { useAuthDispatch } from "../../Contexts/AuthContext";
 const { Title } = Typography;
 
 const LoginPage = (props) => {
@@ -22,12 +23,13 @@ const LoginPage = (props) => {
   } = theme.useToken();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-
+  const dispatch = useAuthDispatch();
   useEffect(() => {
     document.title = "Đăng nhập";
   }, []);
   const onSubmit = (values) => {
     setLoading(true);
+    /*
     LoginAccount(values)
       .then((response) => {
         const { Status, Description, ResponseData } = response;
@@ -38,8 +40,43 @@ const LoginPage = (props) => {
           });
           return;
         }
-        localStorage.setItem("access_token", ResponseData.access_token);
-        navigate("/dashboard"); // redirect to home page
+        // localStorage.setItem("access_token", ResponseData.access_token);
+        navigate("/"); // redirect to home page
+      })
+      .catch((error) => {
+        if (error.response) {
+          notify.error({
+            message: "Có lỗi ở response.",
+            description: `[${error.response.statusText}]`,
+          });
+        } else if (error.request) {
+          notify.error({
+            message: "Có lỗi ở request.",
+            description: error,
+          });
+        } else {
+          notify.error({
+            message: "Có lỗi ở máy khách",
+            description: error.message,
+          });
+        }
+      })
+      .finally((done) => {
+        setLoading(false);
+      });
+      */
+    LoginAccount2(dispatch, values)
+      .then((response) => {
+        const { Status, Description, ResponseData } = response;
+        if (Status !== 1) {
+          notify.error({
+            message: "Đăng nhập không thành công",
+            description: Description,
+          });
+          return;
+        }
+        // localStorage.setItem("access_token", ResponseData.access_token);
+        navigate("/"); // redirect to home page
       })
       .catch((error) => {
         if (error.response) {

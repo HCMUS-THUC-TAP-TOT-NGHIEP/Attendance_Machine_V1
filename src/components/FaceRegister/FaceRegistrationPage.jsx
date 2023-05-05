@@ -13,9 +13,10 @@ import {
   Typography,
   theme,
 } from "antd";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import Webcam from "react-webcam";
+import { useAuthState } from "../../Contexts/AuthContext";
 import Config from "../../config";
 import { MyClock } from "../layouts/Clock";
 import { LoadingDepartmentBE, LoadingEmployeeBE, RegisterFaceBE } from "./api";
@@ -23,7 +24,7 @@ const { Option } = Select;
 const maximumImageRegister = Config.registrationImages;
 
 const FaceRegistrationPage = function (props) {
-  const { notify } = props;
+  const { notify, adminRequired } = props;
   const navigate = useNavigate();
   const [pictureList, setPictureList] = useState([]);
   const [employeeId, setEmployeeId] = useState(null);
@@ -33,8 +34,20 @@ const FaceRegistrationPage = function (props) {
     token: { colorInfoActive },
   } = theme.useToken();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const userDetails = useAuthState();
   useEffect(() => {
     document.title = "Đăng ký khuôn mặt";
+    if (adminRequired) {
+      if (!userDetails.token) {
+        notify.warning({
+          message: "Yêu cầu đăng nhập",
+          description:
+            "Vui lòng sử dụng tài khoản quản trị viên để đăng ký khuôn mặt.",
+        });
+        navigate("/login");
+        return;
+      }
+    }
   }, []);
 
   const registerFaceBE = async () => {
@@ -88,7 +101,6 @@ const FaceRegistrationPage = function (props) {
     if (pictureList.length == 0) return;
     if (pictureList.length >= maximumImageRegister) {
       console.log("stop!");
-      // clearInterval(intervalId);
       return;
     }
     console.log("Auto capture");

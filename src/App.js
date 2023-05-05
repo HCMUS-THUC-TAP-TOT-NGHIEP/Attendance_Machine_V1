@@ -10,35 +10,39 @@ import {
 import MyFooter from "./components/layouts/MyFooter";
 import NoMatch from "./components/layouts/NoMatch";
 import MyHeader from "./components/layouts/MyHeader";
+import { AuthProvider } from "./Contexts/AuthContext";
 
 function App() {
   const [notify, contextHolder] = notification.useNotification();
+
   return (
-    <Layout style={{ height: "100vh" }}>
-      <MyHeader />
-      <Content>
-        <Routes>
-          <Route
-            exact
-            path="/"
-            element={<AutoAttendanceCheck notify={notify} />}
-          />
-          <Route path="/login" element={<LoginPage notify={notify} />} />
-          <Route
-            path="/face"
-            element={<FaceRegistrationIndex notify={notify} />}
-          >
+    <AuthProvider>
+      <Layout style={{ height: "100vh" }}>
+        <MyHeader />
+        <Content>
+          <Routes>
             <Route
-              path="/face/registration"
-              element={<FaceRegistrationPage notify={notify} />}
+              exact
+              path="/"
+              element={<AutoAttendanceCheck notify={notify} />}
             />
-          </Route>
-          <Route path="*" element={<NoMatch notify={notify} />} />
-        </Routes>
-      </Content>
-      <MyFooter />
-      {contextHolder}
-    </Layout>
+            <Route path="/login" element={<LoginPage notify={notify} />} />
+            <Route
+              path="/face"
+              element={<FaceRegistrationIndex notify={notify} adminRequired={true} />}
+            >
+              <Route
+                path="/face/registration"
+                element={<FaceRegistrationPage notify={notify} adminRequired={true}/>}
+              />
+            </Route>
+            <Route path="*" element={<NoMatch notify={notify} />} />
+          </Routes>
+        </Content>
+        <MyFooter />
+        {contextHolder}
+      </Layout>
+    </AuthProvider>
   );
 }
 export default App;
