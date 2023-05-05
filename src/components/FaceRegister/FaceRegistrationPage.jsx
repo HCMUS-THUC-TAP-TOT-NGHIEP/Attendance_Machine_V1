@@ -36,7 +36,6 @@ const FaceRegistrationPage = function (props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const userDetails = useAuthState();
   useEffect(() => {
-    document.title = "Đăng ký khuôn mặt";
     if (adminRequired) {
       if (!userDetails.token) {
         notify.warning({
@@ -48,6 +47,7 @@ const FaceRegistrationPage = function (props) {
         return;
       }
     }
+    document.title = "Đăng ký khuôn mặt";
   }, []);
 
   const registerFaceBE = async () => {

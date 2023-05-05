@@ -42,7 +42,7 @@ const AutoAttendanceCheck = (props) => {
       setPicture(pictureSrc);
       try {
         if (pictureSrc) {
-          var response = await AutoFaceRecognitionBE({ Picture: pictureSrc });
+          var response = await AutoFaceRecognitionBE(pictureSrc);
           if (response.Status === 1) {
             const { Id, Name, Img } = response.ResponseData;
             notify.open({

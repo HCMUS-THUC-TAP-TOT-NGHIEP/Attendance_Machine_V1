@@ -10,7 +10,11 @@ let AxiosInstance = axios.create({
   },
 });
 
-const AutoFaceRecognitionBE = async (requestData) => {
+const AutoFaceRecognitionBE = async (pictureSrc) => {
+  var requestData = {
+    Picture: pictureSrc,
+    AttendanceTime: new Date(),
+  };
   var response = await AxiosInstance.post("api/face/recognition", requestData);
   return response.data;
 };

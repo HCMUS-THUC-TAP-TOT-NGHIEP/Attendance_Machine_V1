@@ -1,19 +1,9 @@
-import {
-  Button,
-  Col,
-  Form,
-  Input,
-  Layout,
-  Row,
-  notification,
-  theme,
-  Typography,
-} from "antd";
+import { Button, Col, Form, Input, Layout, Row, Typography, theme } from "antd";
 import { Content } from "antd/es/layout/layout";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { LoginAccount, LoginAccount2 } from "./api";
 import { useAuthDispatch } from "../../Contexts/AuthContext";
+import { LoginAccount2 } from "./api";
 const { Title } = Typography;
 
 const LoginPage = (props) => {
