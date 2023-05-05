@@ -29,15 +29,8 @@ const FaceRegistrationPage = function (props) {
   const [employeeId, setEmployeeId] = useState(null);
   const webcamRef = useRef(null);
   const [tabKey, setTabKey] = useState(1);
-  // const takePhoto = useCallback(async () => {
-  //   if (webcamRef && webcamRef.current) {
-  //     const pictureSrc = await webcamRef.current.getScreenshot();
-  //     setPictureList([...pictureList, pictureSrc]);
-  //   }
-  //   return;
-  // }, []);
   const {
-    token: { colorBgContainer, colorInfoActive, colorSuccessActive },
+    token: { colorInfoActive },
   } = theme.useToken();
   const [isSubmitting, setIsSubmitting] = useState(false);
   useEffect(() => {

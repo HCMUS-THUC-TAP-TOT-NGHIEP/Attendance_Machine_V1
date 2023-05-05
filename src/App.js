@@ -14,7 +14,7 @@ import MyHeader from "./components/layouts/MyHeader";
 function App() {
   const [notify, contextHolder] = notification.useNotification();
   return (
-    <Layout style={{ minHeight: "100vh" }}>
+    <Layout style={{ height: "100vh" }}>
       <MyHeader />
       <Content>
         <Routes>
