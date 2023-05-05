@@ -11,20 +11,24 @@ let AxiosInstance = axios.create({
 });
 
 const RegisterFaceBE = async (requestData) => {
+  var access_token = localStorage.getItem("access_token");
   var response = await AxiosInstance.post("api/face/register", requestData, {
     headers: {
       "Access-Control-Allow-Origin": "*",
+      Authorization: "Bearer " + access_token,
     },
   });
   return response.data;
 };
 
 const LoadingDepartmentBE = async () => {
+  var access_token = localStorage.getItem("access_token");
   var response = await AxiosInstance.get(
     "api/attendance_machine/department/load",
     {
       headers: {
         "Access-Control-Allow-Origin": "*",
+        Authorization: "Bearer " + access_token,
       },
     }
   );
@@ -32,12 +36,14 @@ const LoadingDepartmentBE = async () => {
 };
 
 const LoadingEmployeeBE = async (requestData) => {
+  var access_token = localStorage.getItem("access_token");
   var response = await AxiosInstance.post(
     "api/attendance_machine/employee/load",
     requestData,
     {
       headers: {
         "Access-Control-Allow-Origin": "*",
+        Authorization: "Bearer " + access_token,
       },
     }
   );
