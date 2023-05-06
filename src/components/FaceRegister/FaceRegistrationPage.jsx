@@ -284,7 +284,12 @@ const SelectUserForm = (props) => {
   const [employeeList, setEmployeeList] = useState([]);
   const [loadingDepartment, setLoadingDepartment] = useState(false);
   const [loadingEmployee, setLoadingEmployee] = useState(false);
+  const userDetails = useAuthState();
+
   useEffect(() => {
+    if (!userDetails.token) {
+      return;
+    }
     const loadDepartment = async () => {
       setLoadingDepartment(true);
       try {
@@ -322,6 +327,9 @@ const SelectUserForm = (props) => {
     loadDepartment();
   }, []);
   useEffect(() => {
+    if (!userDetails.token) {
+      return;
+    }
     const loadEmployeeList = async () => {
       setLoadingEmployee(true);
       try {

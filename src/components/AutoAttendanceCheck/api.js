@@ -19,4 +19,19 @@ const AutoFaceRecognitionBE = async (pictureSrc) => {
   return response.data;
 };
 
-export { AutoFaceRecognitionBE };
+const SearchEmployeeBE = async (request) => {
+  var access_token = localStorage.getItem("access_token");
+  var response = await AxiosInstance.post(
+    "api/attendance_machine/employee/load2",
+    request,
+    {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        Authorization: "Bearer " + access_token,
+      },
+    }
+  );
+  return response.data;
+};
+
+export { AutoFaceRecognitionBE, SearchEmployeeBE };

@@ -5,9 +5,11 @@ import {
   Input,
   Layout,
   List,
+  Modal,
+  Select,
   Typography,
   notification,
-  theme
+  theme,
 } from "antd";
 import Sider from "antd/es/layout/Sider";
 import dayjs from "dayjs";
@@ -18,13 +20,13 @@ import { useNavigate } from "react-router";
 import Webcam from "react-webcam";
 import Config from "../../config";
 import { MyClock } from "../layouts/Clock";
-import { AutoFaceRecognitionBE } from "./api";
+import { AutoFaceRecognitionBE, SearchEmployeeBE } from "./api";
 dayjs.locale("vi");
 dayjs.extend(LocalizedFormat);
 const { Content } = Layout;
+let timeout;
 
 const AutoAttendanceCheck = (props) => {
-  // const { notify } = props;
   const [notify, contextHolder] = notification.useNotification({
     maxCount: 3,
   });
@@ -32,6 +34,7 @@ const AutoAttendanceCheck = (props) => {
   const webcamRef = useRef(null);
   const [picture, setPicture] = useState(null);
   const [stopped, setStopped] = useState(false);
+  const [employeeList, setEmployeeList] = useState([]);
   const {
     token: { colorInfoActive },
   } = theme.useToken();
@@ -106,10 +109,42 @@ const AutoAttendanceCheck = (props) => {
       autoTakePhoto();
     }, Config.AttendanceCheckSeconds * 1000);
   };
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const showModal = () => {
+    setOpen(true);
+  };
+  const handleCancel = () => {
+    setOpen(false);
+  };
+  const handleSearch = (value) => {
+    if (timeout) {
+      clearTimeout(timeout);
+      timeout = null;
+    }
+    if (!value) return;
+    value = String(value).trim();
+    function SearchEmployee() {
+      SearchEmployeeBE({ Keyword: value })
+        .then((response) => {
+          const { Status, ResponseData } = response;
+          if (Status === 1) {
+            console.log(response);
+            setEmployeeList(ResponseData);
+          }
+        })
+        .catch((error) => {})
+        .finally({});
+    }
+    if (value) {
+      timeout = setTimeout(SearchEmployee, 300);
+    } else {
+      setEmployeeList([]);
+    }
+  };
 
   useEffect(() => {
     document.title = "Máy chấm công";
-    // autoTakePhoto();
   }, []);
 
   useEffect(() => {
@@ -120,7 +155,14 @@ const AutoAttendanceCheck = (props) => {
   return (
     <Layout>
       {contextHolder}
-      <Content style={{ padding: "10px", position: "relative" }}>
+      <Content
+        style={{
+          padding: "10px",
+          position: "relative",
+          overflowY: "hidden",
+          height: "100vh",
+        }}
+      >
         <MyClock
           containerStyle={{
             padding: "10px",
@@ -139,8 +181,65 @@ const AutoAttendanceCheck = (props) => {
           screenshotFormat="image/png"
           videoConstraints={Config.videoConstraints}
         ></Webcam>
+        <Button
+          onClick={showModal}
+          className="boxShadow89"
+          style={{
+            position: "absolute",
+            top: "10px",
+            right: "10px",
+          }}
+          type="primary"
+          size="large"
+        >
+          Chấm công bằng mã nhân viên
+        </Button>
+        <Modal
+          open={open}
+          title={<div level={5}>Cung cấp mã nhân viên </div>}
+          onCancel={handleCancel}
+          maskClosable={true}
+          footer={[
+            <Button key="submit" htmlType="submit" type="primary">
+              Chấm công
+            </Button>,
+            <Button key="back" onClick={handleCancel}>
+              Trở lại
+            </Button>,
+          ]}
+        >
+          <Form layout="vertical">
+            <Form.Item
+              label="Nhân viên"
+              name="EmployeeId"
+              rules={[
+                {
+                  required: true,
+                  message: "Vui lòng nhập từ khóa để tìm nhân viên!",
+                },
+              ]}
+              hasFeedback
+              tooltip="Cung cấp mã nhân viên để chấm công khi không nhận diện được khuôn mặt"
+              help="Nhập mã hoặc tên nhân viên để tìm kiếm"
+            >
+              <Select
+                size="large"
+                showSearch={true}
+                onSearch={handleSearch}
+                options={(employeeList || []).map((employee) => ({
+                  label: `${employee.LastName} ${employee.FirstName} (Mã NV: ${employee.Id})`,
+                  value: employee.Id,
+                }))}
+                showArrow={false}
+                filterOption={false}
+                defaultActiveFirstOption={false}
+                notFoundContent={null}
+              />
+            </Form.Item>
+          </Form>
+        </Modal>
       </Content>
-      <Sider
+      {/* <Sider
         theme="light"
         breakpoint="lg"
         collapsedWidth="0"
@@ -153,36 +252,9 @@ const AutoAttendanceCheck = (props) => {
         >
           Cung cấp mã nhân viên
         </Typography.Title>
-        <Form layout="vertical">
-          <Form.Item
-            label="Mã nhân viên"
-            rules={[
-              {
-                required: true,
-                message: "Vui lòng nhập mã nhân viên!",
-              },
-            ]}
-            hasFeedback
-            tooltip="Cung cấp mã nhân viên để chấm công khi không nhận diện được khuôn mặt"
-            help={
-              <Typography.Text type="danger">
-                Cung cấp mã nhân viên để chấm công khi không nhận diện được
-                khuôn mặt
-              </Typography.Text>
-            }
-          >
-            <Input placeholder="Mã nhân viên" size="large" />
-          </Form.Item>
-          <Form.Item>
-            <Button htmlType="submit" type="primary" style={{ width: "100%" }}>
-              Nhận
-            </Button>
-          </Form.Item>
-        </Form>
-      </Sider>
+      </Sider> */}
     </Layout>
   );
 };
 
 export { AutoAttendanceCheck };
-
