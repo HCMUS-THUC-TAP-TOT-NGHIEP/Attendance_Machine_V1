@@ -137,7 +137,7 @@ const AutoAttendanceCheck = (props) => {
         .finally({});
     }
     if (value) {
-      timeout = setTimeout(SearchEmployee, 300);
+      timeout = setTimeout(SearchEmployee, 200);
     } else {
       setEmployeeList([]);
     }
