@@ -8,33 +8,40 @@ import {
   Row,
   Select,
   Space,
+  Spin,
   Tabs,
   Tooltip,
   Typography,
-  theme,
+  notification,
 } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import Webcam from "react-webcam";
 import { useAuthState } from "../../Contexts/AuthContext";
 import Config from "../../config";
-import { MyClock } from "../layouts/Clock";
 import { LoadingDepartmentBE, LoadingEmployeeBE, RegisterFaceBE } from "./api";
+import * as FaceApi from "face-api.js";
+import {
+  useFaceApiDispatch,
+  useFaceApiState,
+} from "../../Contexts/FaceApiContext";
+import { loadModels } from "../../FaceApi";
+
 const { Option } = Select;
 const maximumImageRegister = Config.registrationImages;
+
+let detectFace;
+let interval;
 
 const FaceRegistrationPage = function (props) {
   const { notify, adminRequired } = props;
   const navigate = useNavigate();
   const [pictureList, setPictureList] = useState([]);
   const [employeeId, setEmployeeId] = useState(null);
-  const webcamRef = useRef(null);
   const [tabKey, setTabKey] = useState(1);
-  const {
-    token: { colorInfoActive },
-  } = theme.useToken();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const userDetails = useAuthState();
+
   useEffect(() => {
     if (adminRequired) {
       if (!userDetails.token) {
@@ -89,25 +96,6 @@ const FaceRegistrationPage = function (props) {
       setIsSubmitting(false);
     }
   };
-
-  const autoTakePhoto = () => {
-    if (webcamRef && webcamRef.current) {
-      const pictureSrc = webcamRef.current.getScreenshot();
-      setPictureList((pictureList) => [...pictureList, pictureSrc]);
-    }
-  };
-
-  useEffect(() => {
-    if (pictureList.length == 0) return;
-    if (pictureList.length >= maximumImageRegister) {
-      console.log("stop!");
-      return;
-    }
-    console.log("Auto capture");
-    const newIntervalId = setInterval(() => autoTakePhoto(), 300);
-    return () => clearInterval(newIntervalId);
-  }, [pictureList]);
-
   return (
     <>
       <Tabs
@@ -133,97 +121,12 @@ const FaceRegistrationPage = function (props) {
             key: 2,
             label: "Khuôn mặt",
             children: (
-              <Row justify="center" style={{ padding: "5px" }}>
-                <Col key="col-1" md={14}>
-                  <MyClock
-                    containerStyle={{
-                      padding: "10px",
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      background: colorInfoActive,
-                    }}
-                  />
-                  <Webcam
-                    className="boxShadow89"
-                    style={{ width: "100%" }}
-                    audio={false}
-                    ref={webcamRef}
-                    // height={600}
-                    screenshotFormat="image/png"
-                    videoConstraints={Config.videoConstraints}
-                  ></Webcam>
-                  <Space
-                    direction="horizontal"
-                    style={{
-                      paddingTop: "15px",
-                      justifyContent: "center",
-                      width: "100%",
-                    }}
-                  >
-                    <Tooltip title="Bắt đầu chụp ảnh tự động">
-                      <Button
-                        type="primary"
-                        icon={<CameraFilled />}
-                        shape="circle"
-                        onClick={autoTakePhoto}
-                        disabled={pictureList.length >= maximumImageRegister}
-                      />
-                    </Tooltip>
-                    <Tooltip title="Chụp lại (Retake)">
-                      <Button
-                        type="primary"
-                        icon={<UndoOutlined />}
-                        onClick={() => setPictureList([])}
-                        disabled={pictureList.length == 0}
-                      />
-                    </Tooltip>
-                  </Space>
-                </Col>
-                <Col key="col-2" md={10}>
-                  <Image.PreviewGroup>
-                    <Space
-                      size={[8, 16]}
-                      align="center"
-                      style={{
-                        width: "100%",
-                        justifyContent: "center",
-                        WebkitJustifyContent: "center",
-                      }}
-                      wrap
-                    >
-                      {pictureList.map((rec, index) => {
-                        return (
-                          <Image
-                            key={index}
-                            height={100}
-                            src={rec}
-                            className="boxShadow89"
-                          />
-                        );
-                      })}
-                      {Array(maximumImageRegister - pictureList.length)
-                        .fill(0)
-                        .map((_, index) => {
-                          return (
-                            <Image
-                              key={index + pictureList.length}
-                              height={100}
-                              width={1600 / 9}
-                              src={Config.ImagePlaceHolder}
-                              className="boxShadow89"
-                            />
-                          );
-                        })}
-                    </Space>
-                  </Image.PreviewGroup>
-                  <div align="center" style={{ padding: "5px" }}>
-                    <Typography.Text strong>
-                      Đã chụp {pictureList.length}/{maximumImageRegister} ảnh
-                    </Typography.Text>
-                  </div>
-                </Col>
-              </Row>
+              <CaptureFaceComponent
+                maximumImageRegister={maximumImageRegister}
+                setPictureList={setPictureList}
+                pictureList={pictureList}
+                active={tabKey === 2}
+              />
             ),
           },
         ]}
@@ -427,3 +330,247 @@ const SelectUserForm = (props) => {
 };
 
 export default FaceRegistrationPage;
+
+var takePhotoInterval;
+
+function CaptureFaceComponent({
+  maximumImageRegister,
+  setPictureList,
+  pictureList,
+  active,
+  ...rest
+}) {
+  const webcamRef = useRef(null);
+  const canvasRef = useRef(null);
+  const faceApiState = useFaceApiState();
+  const { FaceApi, loadedNeededModels } = faceApiState;
+  const faceApiDispatch = useFaceApiDispatch();
+  const [imageList, setImageList] = useState(pictureList);
+  const [notify, contextHolder] = notification.useNotification();
+
+  useEffect(() => {
+    if (!active) return;
+    const initial = async () => {
+      try {
+        if (!FaceApi) {
+          await loadModels(faceApiDispatch);
+        }
+        startVideo();
+      } catch (error) {
+        notify.error({ message: error });
+      }
+    };
+    initial();
+    return () => {
+      clearInterval(interval);
+      clearInterval(takePhotoInterval);
+    };
+  }, [active]);
+
+  useEffect(() => {
+    if (imageList.length == 0) return;
+    if (imageList.length >= maximumImageRegister) {
+      console.log("stop!");
+      setPictureList(imageList);
+      return;
+    }
+    console.log("Auto capture");
+    const newIntervalId = setInterval(() => autoTakePhoto(), 300);
+    return () => clearInterval(newIntervalId);
+  }, [imageList]);
+
+  const autoTakePhoto = async () => {
+    const video = webcamRef.current.video;
+    if (webcamRef && webcamRef.current) {
+      try {
+        const detection = await FaceApi.detectSingleFace(
+          video
+          // new FaceApi.TinyFaceDetectorOptions()
+        ).withFaceExpressions();
+        if (detection) {
+          // console.log(detection);
+          var pictureSrcList = await extractFaceFromBox(
+            video,
+            detection.detection.box
+          );
+          console.log("pictureSrcList", pictureSrcList);
+          if (pictureSrcList && pictureSrcList.length != 0) {
+            setImageList([...imageList, pictureSrcList[0]]);
+            clearInterval(takePhotoInterval);
+          }
+        }
+      } catch (error) {
+        console.log("detectFace", error);
+      }
+    }
+  };
+
+  const extractFaceFromBox = async (inputImage, box) => {
+    console.log(box);
+    const regionsToExtract = [
+      new FaceApi.Rect(box.x - 50, box.y - 50, box.width + 100, box.height + 100),
+    ];
+
+    let faceImages = await FaceApi.extractFaces(inputImage, regionsToExtract);
+    console.log("faceImages", faceImages);
+    return faceImages.map((faceImage) => faceImage.toDataURL());
+  };
+
+  const detectFace = () => {
+    /*
+    const video = webcamRef.current.video;
+    if (interval) {
+      clearInterval(interval);
+    }
+    interval = setInterval(async () => {
+      try {
+        const canvas = canvasRef.current;
+        const displaySize = {
+          width: video.offsetWidth,
+          height: video.offsetHeight,
+        };
+        FaceApi.matchDimensions(canvasRef.current, displaySize);
+        const detection = await FaceApi.detectSingleFace(
+          video,
+          new FaceApi.TinyFaceDetectorOptions()
+        ).withFaceExpressions();
+        if (detection) {
+          console.log(detection);
+          const resizedDetections = FaceApi.resizeResults(
+            detection,
+            displaySize
+          );
+          canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+          FaceApi.draw.drawDetections(canvas, resizedDetections);
+        }
+      } catch (error) {
+        console.log("detectFace", error);
+      }
+
+      // }, Config.AttendanceCheckSeconds * 1000);
+    }, 100);
+    */
+  };
+
+  const startVideo = () => {
+    navigator.mediaDevices
+      .getUserMedia({ audio: false, video: true })
+      .then((stream) => {
+        webcamRef.current.video.srcObject = stream;
+        webcamRef.current.video.addEventListener("playing", () => detectFace());
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  };
+
+  return (
+    <Spin spinning={!loadedNeededModels}>
+      <Row
+        justify="center"
+        style={{
+          padding: "5px",
+        }}
+      >
+        {contextHolder}
+        <Col key="col-1" md={14}>
+          <div>
+            <Webcam
+              className="boxShadow89"
+              style={{
+                width: "100%",
+              }}
+              audio={false}
+              ref={webcamRef} // height={600}
+              screenshotFormat="image/png"
+              videoConstraints={Config.videoConstraints} // onPlaying={detectFace}
+            ></Webcam>
+            <canvas
+              ref={canvasRef}
+              style={{
+                zIndex: 999,
+                position: "absolute",
+              }}
+            />
+          </div>
+
+          <Space
+            direction="horizontal"
+            style={{
+              paddingTop: "15px",
+              justifyContent: "center",
+              width: "100%",
+            }}
+          >
+            <Tooltip title="Bắt đầu chụp ảnh tự động">
+              <Button
+                type="primary"
+                icon={<CameraFilled />}
+                shape="circle"
+                onClick={autoTakePhoto}
+                disabled={imageList.length >= maximumImageRegister}
+              />
+            </Tooltip>
+            <Tooltip title="Chụp lại (Retake)">
+              <Button
+                type="primary"
+                icon={<UndoOutlined />}
+                onClick={() => setImageList([])}
+                disabled={imageList.length == 0}
+              />
+            </Tooltip>
+          </Space>
+        </Col>
+        <Col key="col-2" md={10}>
+          <Image.PreviewGroup>
+            <Space
+              size={[8, 16]}
+              align="center"
+              style={{
+                width: "100%",
+                justifyContent: "center",
+                WebkitJustifyContent: "center",
+              }}
+              wrap
+            >
+              {imageList.map((rec, index) => {
+                return (
+                  <Image
+                    key={index}
+                    height={100}
+                    src={rec}
+                    className="boxShadow89"
+                    preview={true}
+                  />
+                );
+              })}
+              {Array(maximumImageRegister - imageList.length)
+                .fill(0)
+                .map((_, index) => {
+                  return (
+                    <Image
+                      key={index + imageList.length}
+                      height={100}
+                      width={1600 / 9}
+                      src={Config.ImagePlaceHolder}
+                      className="boxShadow89"
+                    />
+                  );
+                })}
+            </Space>
+          </Image.PreviewGroup>
+          <div
+            align="center"
+            style={{
+              padding: "5px",
+            }}
+          >
+            <Typography.Text strong>
+              Đã chụp {imageList.length}/{maximumImageRegister} ảnh
+            </Typography.Text>
+          </div>
+        </Col>
+      </Row>
+    </Spin>
+  );
+}
