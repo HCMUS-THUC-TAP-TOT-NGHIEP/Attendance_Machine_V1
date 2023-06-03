@@ -28,7 +28,9 @@ const loadModels = async (dispatch) => {
     // await FaceApi.loadFaceExpressionModel(Config.FaceApiModelFolder);
     // await FaceApi.loadFaceLandmarkTinyModel(Config.FaceApiModelFolder);
     // await FaceApi.loadFaceLandmarkModel(Config.FaceApiModelFolder);
+    // await FaceApi.loadFaceDetectionModel(Config.FaceApiModelFolder);
     // await FaceApi.loadFaceRecognitionModel(Config.FaceApiModelFolder);
+
     dispatch({ type: "LOADING_SUCCESS", payload: { FaceApi: FaceApi } });
   } catch (err) {
     console.error("loadModels", err);

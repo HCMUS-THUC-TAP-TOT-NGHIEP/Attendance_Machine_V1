@@ -1,3 +1,4 @@
+import dayjs from "dayjs"
 import axios from "axios";
 import Config from "../../config";
 let AxiosInstance = axios.create({
@@ -13,7 +14,7 @@ let AxiosInstance = axios.create({
 const AutoFaceRecognitionBE = async (pictureSrc) => {
   var requestData = {
     Picture: pictureSrc,
-    AttendanceTime: new Date(),
+    AttendanceTime: dayjs().format("YYYY-MM-DDTHH:mm:ss"),
   };
   var response = await AxiosInstance.post("api/face/recognition", requestData);
   return response.data;

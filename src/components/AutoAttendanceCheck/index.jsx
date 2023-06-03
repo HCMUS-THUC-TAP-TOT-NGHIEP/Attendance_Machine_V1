@@ -76,7 +76,9 @@ const AutoAttendanceCheck = (props) => {
             setEmployeeList(ResponseData);
           }
         })
-        .catch((error) => {})
+        .catch((error) => {
+          handleErrorOfRequest({error, notify});
+        })
         .finally({});
     }
     if (value) {
@@ -147,44 +149,44 @@ const AutoAttendanceCheck = (props) => {
   const recognitionBE = async (descriptor, pictureSrc) => {
     try {
       var labeledDescriptors = LabeledDescriptors;
-      if (descriptor && labeledDescriptors.length) {
-        const faceMatcher = new FaceApi.FaceMatcher(labeledDescriptors);
-        const bestMatch = faceMatcher.findBestMatch(descriptor);
-        if (bestMatch.distance <= 1 - 0.75) {
-          // match trên 70%
-          console.log("in cache", bestMatch.distance);
-          var { Id, Name, Img } = JSON.parse(bestMatch.label);
-          notify.open({
-            description: (
-              <List key={Id} itemLayout="horizontal">
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={
-                      <Avatar
-                        shape="square"
-                        src={`data:image/png;base64,${Img}`}
-                        size={{
-                          xs: 24,
-                          sm: 32,
-                          md: 40,
-                          lg: 64,
-                          xl: 80,
-                          xxl: 100,
-                        }}
-                      />
-                    }
-                    title={"Xin chào, " + Name}
-                    description={Name}
-                  />
-                </List.Item>
-              </List>
-            ),
-            placement: "bottomLeft",
-            duration: 60,
-          });
-          return;
-        }
-      }
+      // if (descriptor && labeledDescriptors.length) {
+      //   const faceMatcher = new FaceApi.FaceMatcher(labeledDescriptors);
+      //   const bestMatch = faceMatcher.findBestMatch(descriptor);
+      //   if (bestMatch.distance <= 1 - 0.75) {
+      //     // match trên 70%
+      //     console.log("in cache", bestMatch.distance);
+      //     var { Id, Name, Img } = JSON.parse(bestMatch.label);
+      //     notify.open({
+      //       description: (
+      //         <List key={Id} itemLayout="horizontal">
+      //           <List.Item>
+      //             <List.Item.Meta
+      //               avatar={
+      //                 <Avatar
+      //                   shape="square"
+      //                   src={`data:image/png;base64,${Img}`}
+      //                   size={{
+      //                     xs: 24,
+      //                     sm: 32,
+      //                     md: 40,
+      //                     lg: 64,
+      //                     xl: 80,
+      //                     xxl: 100,
+      //                   }}
+      //                 />
+      //               }
+      //               title={"Xin chào, " + Name}
+      //               description={Name}
+      //             />
+      //           </List.Item>
+      //         </List>
+      //       ),
+      //       placement: "bottomLeft",
+      //       duration: 60,
+      //     });
+      //     return;
+      //   }
+      // }
       console.log("call AutoFaceRecognitionBE");
       var response = await AutoFaceRecognitionBE(pictureSrc);
       if (response.Status === 1) {
@@ -195,7 +197,7 @@ const AutoAttendanceCheck = (props) => {
           });
           // console.log("labelIndex", labelIndex);
           if (labelIndex == -1) {
-            if (labeledDescriptors.length && labeledDescriptors.length >= 5) {
+            if (labeledDescriptors.length && labeledDescriptors.length >= 7) {
               labeledDescriptors.shift();
             }
             labeledDescriptors.push(
@@ -205,7 +207,7 @@ const AutoAttendanceCheck = (props) => {
             );
             // console.info("add labeledDescriptors");
           } else {
-            if (labeledDescriptors[labelIndex].length >= 5) {
+            if (labeledDescriptors[labelIndex].length >= 7) {
               labeledDescriptors[labelIndex].shift();
             }
             // console.info("change labeledDescriptors[" + labelIndex + "]");
@@ -252,26 +254,7 @@ const AutoAttendanceCheck = (props) => {
         // console.error(response.Description);
       }
     } catch (error) {
-      console.error(error);
-      if (error.response) {
-        notify.error({
-          message: "Có lỗi ở response.",
-          description: `[${error.response.statusText}]`,
-          placement: "bottomLeft",
-        });
-      } else if (error.request) {
-        notify.error({
-          message: "Có lỗi ở request.",
-          description: error,
-          placement: "bottomLeft",
-        });
-      } else {
-        notify.error({
-          message: "Có lỗi ở máy khách",
-          description: error.message,
-          placement: "bottomLeft",
-        });
-      }
+      handleErrorOfRequest({error, notify});
     } finally {
     }
   };
@@ -285,7 +268,7 @@ const AutoAttendanceCheck = (props) => {
         }
         startVideo();
       } catch (error) {
-        notify.error({ message: error });
+        handleErrorOfRequest({error, notify});
       }
     };
     initial();
@@ -299,7 +282,7 @@ const AutoAttendanceCheck = (props) => {
         webcamRef.current.video.srcObject = stream;
       })
       .catch((error) => {
-        console.error(error);
+        handleErrorOfRequest({error, notify});
       });
   };
 

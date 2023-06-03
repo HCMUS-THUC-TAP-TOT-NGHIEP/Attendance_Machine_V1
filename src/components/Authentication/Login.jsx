@@ -19,42 +19,6 @@ const LoginPage = (props) => {
   }, []);
   const onSubmit = (values) => {
     setLoading(true);
-    /*
-    LoginAccount(values)
-      .then((response) => {
-        const { Status, Description, ResponseData } = response;
-        if (Status !== 1) {
-          notify.error({
-            message: "Đăng nhập không thành công",
-            description: Description,
-          });
-          return;
-        }
-        // localStorage.setItem("access_token", ResponseData.access_token);
-        navigate("/"); // redirect to home page
-      })
-      .catch((error) => {
-        if (error.response) {
-          notify.error({
-            message: "Có lỗi ở response.",
-            description: `[${error.response.statusText}]`,
-          });
-        } else if (error.request) {
-          notify.error({
-            message: "Có lỗi ở request.",
-            description: error,
-          });
-        } else {
-          notify.error({
-            message: "Có lỗi ở máy khách",
-            description: error.message,
-          });
-        }
-      })
-      .finally((done) => {
-        setLoading(false);
-      });
-      */
     LoginAccount2(dispatch, values)
       .then((response) => {
         const { Status, Description, ResponseData } = response;
@@ -69,22 +33,7 @@ const LoginPage = (props) => {
         navigate("/"); // redirect to home page
       })
       .catch((error) => {
-        if (error.response) {
-          notify.error({
-            message: "Có lỗi ở response.",
-            description: `[${error.response.statusText}]`,
-          });
-        } else if (error.request) {
-          notify.error({
-            message: "Có lỗi ở request.",
-            description: error,
-          });
-        } else {
-          notify.error({
-            message: "Có lỗi ở máy khách",
-            description: error.message,
-          });
-        }
+        handleErrorOfRequest({error, notify});
       })
       .finally((done) => {
         setLoading(false);

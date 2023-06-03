@@ -76,22 +76,7 @@ const FaceRegistrationPage = function (props) {
         description: res.Description,
       });
     } catch (error) {
-      if (error.response) {
-        notify.error({
-          message: "Có lỗi ở response.",
-          description: `[${error.response.statusText}]`,
-        });
-      } else if (error.request) {
-        notify.error({
-          message: "Có lỗi ở request.",
-          description: error,
-        });
-      } else {
-        notify.error({
-          message: "Có lỗi ở máy khách",
-          description: error.message,
-        });
-      }
+      handleErrorOfRequest({error, notify});
     } finally {
       setIsSubmitting(false);
     }
@@ -206,22 +191,7 @@ const SelectUserForm = (props) => {
           description: res1.Description,
         });
       } catch (error) {
-        if (error.response) {
-          notify.error({
-            message: "Có lỗi ở response.",
-            description: `[${error.response.statusText}]`,
-          });
-        } else if (error.request) {
-          notify.error({
-            message: "Có lỗi ở request.",
-            description: error,
-          });
-        } else {
-          notify.error({
-            message: "Có lỗi ở máy khách",
-            description: error.message,
-          });
-        }
+        handleErrorOfRequest({error, notify});
       } finally {
         setLoadingDepartment(false);
       }
@@ -249,22 +219,7 @@ const SelectUserForm = (props) => {
           description: res1.Description,
         });
       } catch (error) {
-        if (error.response) {
-          notify.error({
-            message: "Có lỗi ở response.",
-            description: `[${error.response.statusText}]`,
-          });
-        } else if (error.request) {
-          notify.error({
-            message: "Có lỗi ở request.",
-            description: error,
-          });
-        } else {
-          notify.error({
-            message: "Có lỗi ở máy khách",
-            description: error.message,
-          });
-        }
+        handleErrorOfRequest({error, notify});
       } finally {
         setLoadingEmployee(false);
       }
@@ -357,7 +312,7 @@ function CaptureFaceComponent({
         }
         startVideo();
       } catch (error) {
-        notify.error({ message: error });
+        handleErrorOfRequest({error, notify});
       }
     };
     initial();
@@ -400,7 +355,7 @@ function CaptureFaceComponent({
           }
         }
       } catch (error) {
-        console.log("detectFace", error);
+        handleErrorOfRequest({error, notify});
       }
     }
   };
@@ -460,7 +415,7 @@ function CaptureFaceComponent({
         webcamRef.current.video.addEventListener("playing", () => detectFace());
       })
       .catch((error) => {
-        console.error(error);
+        handleErrorOfRequest({error, notify});
       });
   };
 
