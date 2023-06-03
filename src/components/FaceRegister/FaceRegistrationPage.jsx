@@ -26,6 +26,7 @@ import {
   useFaceApiState,
 } from "../../Contexts/FaceApiContext";
 import { loadModels } from "../../FaceApi";
+import { handleErrorOfRequest } from "../../utils/Helpers";
 
 const { Option } = Select;
 const maximumImageRegister = Config.registrationImages;

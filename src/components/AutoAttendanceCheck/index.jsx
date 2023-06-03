@@ -27,6 +27,7 @@ import {
 } from "../../Contexts/FaceApiContext";
 import { loadModels } from "../../FaceApi";
 import { LabeledFaceDescriptors } from "face-api.js";
+import { handleErrorOfRequest } from "../../utils/Helpers";
 // import { FaceApi, detectFaces, loadModels } from "../../FaceApi";
 dayjs.locale("vi");
 dayjs.extend(LocalizedFormat);
