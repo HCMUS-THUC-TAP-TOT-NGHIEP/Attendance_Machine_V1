@@ -1,5 +1,7 @@
 export const handleErrorOfRequest = ({ error, notify, ...rest }) => {
   try {
+    console.error(error);
+
     if (error.code === "ECONNABORTED") {
       notify.error({
         message: <b>Thông báo</b>,

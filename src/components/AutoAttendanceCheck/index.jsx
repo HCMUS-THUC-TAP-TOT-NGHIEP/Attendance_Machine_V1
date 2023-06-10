@@ -45,6 +45,8 @@ const AutoAttendanceCheck = (props) => {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
   // const [picture, setPicture] = useState(null);
+  const [videoswitch, setVideo] = useState(true);
+  const [stream, setStream] = useState(null);
   const [stopped, setStopped] = useState(false);
   const [employeeList, setEmployeeList] = useState([]);
   const {
@@ -78,7 +80,7 @@ const AutoAttendanceCheck = (props) => {
           }
         })
         .catch((error) => {
-          handleErrorOfRequest({error, notify});
+          handleErrorOfRequest({ error, notify });
         })
         .finally({});
     }
@@ -123,7 +125,7 @@ const AutoAttendanceCheck = (props) => {
           video,
           detections[0].detection.box
         );
-        await recognitionBE(detections[0].descriptor, pictureSrcList[0]);
+        // await recognitionBE(detections[0].descriptor, pictureSrcList[0]);
         // pictureSrcList.forEach(async (pictureSrc) => {
         // await recognitionBE(detections[0].descriptor, pictureSrc);
         // });
@@ -150,44 +152,44 @@ const AutoAttendanceCheck = (props) => {
   const recognitionBE = async (descriptor, pictureSrc) => {
     try {
       var labeledDescriptors = LabeledDescriptors;
-      // if (descriptor && labeledDescriptors.length) {
-      //   const faceMatcher = new FaceApi.FaceMatcher(labeledDescriptors);
-      //   const bestMatch = faceMatcher.findBestMatch(descriptor);
-      //   if (bestMatch.distance <= 1 - 0.75) {
-      //     // match trên 70%
-      //     console.log("in cache", bestMatch.distance);
-      //     var { Id, Name, Img } = JSON.parse(bestMatch.label);
-      //     notify.open({
-      //       description: (
-      //         <List key={Id} itemLayout="horizontal">
-      //           <List.Item>
-      //             <List.Item.Meta
-      //               avatar={
-      //                 <Avatar
-      //                   shape="square"
-      //                   src={`data:image/png;base64,${Img}`}
-      //                   size={{
-      //                     xs: 24,
-      //                     sm: 32,
-      //                     md: 40,
-      //                     lg: 64,
-      //                     xl: 80,
-      //                     xxl: 100,
-      //                   }}
-      //                 />
-      //               }
-      //               title={"Xin chào, " + Name}
-      //               description={Name}
-      //             />
-      //           </List.Item>
-      //         </List>
-      //       ),
-      //       placement: "bottomLeft",
-      //       duration: 60,
-      //     });
-      //     return;
-      //   }
-      // }
+      if (descriptor && labeledDescriptors.length) {
+        const faceMatcher = new FaceApi.FaceMatcher(labeledDescriptors);
+        const bestMatch = faceMatcher.findBestMatch(descriptor);
+        if (bestMatch.distance <= 1 - 0.75) {
+          // match trên 70%
+          console.log("in cache", bestMatch.distance);
+          var { Id, Name, Img } = JSON.parse(bestMatch.label);
+          notify.open({
+            description: (
+              <List key={Id} itemLayout="horizontal">
+                <List.Item>
+                  <List.Item.Meta
+                    avatar={
+                      <Avatar
+                        shape="square"
+                        src={`data:image/png;base64,${Img}`}
+                        size={{
+                          xs: 24,
+                          sm: 32,
+                          md: 40,
+                          lg: 64,
+                          xl: 80,
+                          xxl: 100,
+                        }}
+                      />
+                    }
+                    title={"Xin chào, " + Name}
+                    description={Name}
+                  />
+                </List.Item>
+              </List>
+            ),
+            placement: "bottomLeft",
+            duration: 60,
+          });
+          return;
+        }
+      }
       console.log("call AutoFaceRecognitionBE");
       var response = await AutoFaceRecognitionBE(pictureSrc);
       if (response.Status === 1) {
@@ -255,7 +257,7 @@ const AutoAttendanceCheck = (props) => {
         // console.error(response.Description);
       }
     } catch (error) {
-      handleErrorOfRequest({error, notify});
+      handleErrorOfRequest({ error, notify });
     } finally {
     }
   };
@@ -267,24 +269,51 @@ const AutoAttendanceCheck = (props) => {
         if (!FaceApi) {
           await loadModels(faceApiDispatch);
         }
-        startVideo();
+        navigator.mediaDevices
+          .getUserMedia({ audio: false, video: true })
+          .then((stream) => {
+            webcamRef.current.video.srcObject = stream;
+            setStream(stream);
+          })
+          .catch((error) => {
+            throw error;
+          });
       } catch (error) {
-        handleErrorOfRequest({error, notify});
+        handleErrorOfRequest({ error, notify });
       }
     };
     initial();
     return () => clearInterval(interval);
   }, []);
 
-  const startVideo = () => {
-    navigator.mediaDevices
-      .getUserMedia({ audio: false, video: true })
-      .then((stream) => {
-        webcamRef.current.video.srcObject = stream;
-      })
-      .catch((error) => {
-        handleErrorOfRequest({error, notify});
+  // const startVideo = () => {
+  //   navigator.mediaDevices
+  //     .getUserMedia({ audio: false, video: true })
+  //     .then((stream) => {
+  //       webcamRef.current.video.srcObject = stream;
+  //       setStream(stream);
+  //     })
+  //     .catch((error) => {
+  //       handleErrorOfRequest({ error, notify });
+  //     });
+  // };
+
+  const handleVideo = () => {
+    if (videoswitch) {
+      setVideo(false);
+      stream.getTracks().forEach(function (track) {
+        if (track.readyState === "live" && track.kind === "video") {
+          track.enabled = false;
+        }
       });
+    } else {
+      setVideo(true);
+      stream.getTracks().forEach(function (track) {
+        if (track.readyState === "live" && track.kind === "video") {
+          track.enabled = true;
+        }
+      });
+    }
   };
 
   return (
@@ -325,7 +354,7 @@ const AutoAttendanceCheck = (props) => {
             style={{ zIndex: 101, position: "absolute" }}
           />
           <Button
-            onClick={showModal}
+            onClick={handleVideo}
             className="boxShadow89"
             style={{
               position: "absolute",
@@ -336,8 +365,9 @@ const AutoAttendanceCheck = (props) => {
             type="primary"
             size="large"
           >
-            Chấm công bằng mã nhân viên
+            Tắt camera
           </Button>
+
           <Modal
             open={open}
             title={<div level={5}>Cung cấp mã nhân viên </div>}

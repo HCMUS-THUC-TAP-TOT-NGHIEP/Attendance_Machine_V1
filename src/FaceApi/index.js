@@ -17,11 +17,18 @@ const loadModels = async (dispatch) => {
   try {
     dispatch({ type: "REQUEST_LOADING" });
     console.log("Loading models...");
-    await FaceApi.nets.tinyFaceDetector.loadFromUri("/models");
-    await FaceApi.nets.faceExpressionNet.loadFromUri("/models");
-    await FaceApi.nets.faceLandmark68Net.loadFromUri("/models");
-    await FaceApi.nets.ssdMobilenetv1.loadFromUri("/models");
-    await FaceApi.nets.faceRecognitionNet.loadFromUri("/models");
+    await Promise.all([
+      FaceApi.nets.tinyFaceDetector.loadFromUri("/models"),
+      FaceApi.nets.faceExpressionNet.loadFromUri("/models"),
+      FaceApi.nets.faceLandmark68Net.loadFromUri("/models"),
+      FaceApi.nets.ssdMobilenetv1.loadFromUri("/models"),
+      FaceApi.nets.faceRecognitionNet.loadFromUri("/models"),
+    ]);
+    // await FaceApi.nets.tinyFaceDetector.loadFromUri("/models");
+    // await FaceApi.nets.faceExpressionNet.loadFromUri("/models");
+    // await FaceApi.nets.faceLandmark68Net.loadFromUri("/models");
+    // await FaceApi.nets.ssdMobilenetv1.loadFromUri("/models");
+    // await FaceApi.nets.faceRecognitionNet.loadFromUri("/models");
 
     // await FaceApi.loadTinyFaceDetectorModel(Config.FaceApiModelFolder);
     // await FaceApi.loadSsdMobilenetv1Model(Config.FaceApiModelFolder);

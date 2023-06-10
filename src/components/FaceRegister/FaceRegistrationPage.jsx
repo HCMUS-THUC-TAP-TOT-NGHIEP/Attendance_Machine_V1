@@ -17,7 +17,7 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import Webcam from "react-webcam";
-import { useAuthState } from "../../Contexts/AuthContext";
+import { useAuthDispatch, useAuthState } from "../../Contexts/AuthContext";
 import Config from "../../config";
 import { LoadingDepartmentBE, LoadingEmployeeBE, RegisterFaceBE } from "./api";
 import * as FaceApi from "face-api.js";
@@ -27,6 +27,7 @@ import {
 } from "../../Contexts/FaceApiContext";
 import { loadModels } from "../../FaceApi";
 import { handleErrorOfRequest } from "../../utils/Helpers";
+import { Logout2 } from "../Authentication/api";
 
 const { Option } = Select;
 const maximumImageRegister = Config.registrationImages;
@@ -42,6 +43,7 @@ const FaceRegistrationPage = function (props) {
   const [tabKey, setTabKey] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const userDetails = useAuthState();
+  const dispatch = useAuthDispatch();
 
   useEffect(() => {
     if (adminRequired) {
@@ -77,7 +79,17 @@ const FaceRegistrationPage = function (props) {
         description: res.Description,
       });
     } catch (error) {
-      handleErrorOfRequest({error, notify});
+      if (error.status === 401) {
+        navigate("/login");
+        Logout2(dispatch);
+        notify.error({
+          message: <b>Thông báo</b>,
+          description:
+            "Vui lòng sử dụng tài khoản quản trị viên để đăng ký khuôn mặt.",
+        });
+        return;
+      }
+      handleErrorOfRequest({ error, notify });
     } finally {
       setIsSubmitting(false);
     }
@@ -174,6 +186,8 @@ const SelectUserForm = (props) => {
   const [loadingDepartment, setLoadingDepartment] = useState(false);
   const [loadingEmployee, setLoadingEmployee] = useState(false);
   const userDetails = useAuthState();
+  const dispatch = useAuthDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!userDetails.token) {
@@ -192,7 +206,17 @@ const SelectUserForm = (props) => {
           description: res1.Description,
         });
       } catch (error) {
-        handleErrorOfRequest({error, notify});
+        if (error.response.status === 401) {
+          navigate("/login");
+          Logout2(dispatch).then((res) => {});
+          notify.error({
+            message: <b>Thông báo</b>,
+            description:
+              "Vui lòng sử dụng tài khoản quản trị viên để đăng ký khuôn mặt.",
+          });
+          return;
+        }
+        handleErrorOfRequest({ error, notify });
       } finally {
         setLoadingDepartment(false);
       }
@@ -220,7 +244,7 @@ const SelectUserForm = (props) => {
           description: res1.Description,
         });
       } catch (error) {
-        handleErrorOfRequest({error, notify});
+        handleErrorOfRequest({ error, notify });
       } finally {
         setLoadingEmployee(false);
       }
@@ -303,6 +327,8 @@ function CaptureFaceComponent({
   const faceApiDispatch = useFaceApiDispatch();
   const [imageList, setImageList] = useState(pictureList);
   const [notify, contextHolder] = notification.useNotification();
+  const [capProcessing, setCapProcessing] = useState(false);
+  const dispatch = useAuthDispatch();
 
   useEffect(() => {
     if (!active) return;
@@ -313,7 +339,7 @@ function CaptureFaceComponent({
         }
         startVideo();
       } catch (error) {
-        handleErrorOfRequest({error, notify});
+        handleErrorOfRequest({ error, notify });
       }
     };
     initial();
@@ -338,11 +364,12 @@ function CaptureFaceComponent({
   const autoTakePhoto = async () => {
     const video = webcamRef.current.video;
     if (webcamRef && webcamRef.current) {
+      setCapProcessing(true);
       try {
         const detection = await FaceApi.detectSingleFace(
           video
           // new FaceApi.TinyFaceDetectorOptions()
-        ).withFaceExpressions();
+        );
         if (detection) {
           // console.log(detection);
           var pictureSrcList = await extractFaceFromBox(
@@ -353,10 +380,13 @@ function CaptureFaceComponent({
           if (pictureSrcList && pictureSrcList.length != 0) {
             setImageList([...imageList, pictureSrcList[0]]);
             clearInterval(takePhotoInterval);
+            setCapProcessing(false);
           }
         }
       } catch (error) {
-        handleErrorOfRequest({error, notify});
+        handleErrorOfRequest({ error, notify });
+      } finally {
+        // setCapProcessing(false);
       }
     }
   };
@@ -364,7 +394,12 @@ function CaptureFaceComponent({
   const extractFaceFromBox = async (inputImage, box) => {
     console.log(box);
     const regionsToExtract = [
-      new FaceApi.Rect(box.x - 50, box.y - 50, box.width + 100, box.height + 100),
+      new FaceApi.Rect(
+        box.x - 50,
+        box.y - 50,
+        box.width + 100,
+        box.height + 100
+      ),
     ];
 
     let faceImages = await FaceApi.extractFaces(inputImage, regionsToExtract);
@@ -373,12 +408,12 @@ function CaptureFaceComponent({
   };
 
   const detectFace = () => {
-    /*
     const video = webcamRef.current.video;
     if (interval) {
       clearInterval(interval);
     }
     interval = setInterval(async () => {
+      if (!FaceApi) return;
       try {
         const canvas = canvasRef.current;
         const displaySize = {
@@ -402,10 +437,8 @@ function CaptureFaceComponent({
       } catch (error) {
         console.log("detectFace", error);
       }
-
-      // }, Config.AttendanceCheckSeconds * 1000);
-    }, 100);
-    */
+    }, Config.AttendanceCheckSeconds * 1000);
+    // }, 100);
   };
 
   const startVideo = () => {
@@ -416,7 +449,15 @@ function CaptureFaceComponent({
         webcamRef.current.video.addEventListener("playing", () => detectFace());
       })
       .catch((error) => {
-        handleErrorOfRequest({error, notify});
+        if (error.status === 401) {
+          Logout2(dispatch);
+          notify.error({
+            message: <b>Thông báo</b>,
+            description: "Yêu cầu đăng nhập bằng tài khoản quản trị.",
+          });
+          return;
+        }
+        handleErrorOfRequest({ error, notify });
       });
   };
 
@@ -426,6 +467,7 @@ function CaptureFaceComponent({
         justify="center"
         style={{
           padding: "5px",
+          overflowX: "hidden",
         }}
       >
         {contextHolder}
@@ -458,23 +500,23 @@ function CaptureFaceComponent({
               width: "100%",
             }}
           >
-            <Tooltip title="Bắt đầu chụp ảnh tự động">
-              <Button
-                type="primary"
-                icon={<CameraFilled />}
-                shape="circle"
-                onClick={autoTakePhoto}
-                disabled={imageList.length >= maximumImageRegister}
-              />
-            </Tooltip>
-            <Tooltip title="Chụp lại (Retake)">
-              <Button
-                type="primary"
-                icon={<UndoOutlined />}
-                onClick={() => setImageList([])}
-                disabled={imageList.length == 0}
-              />
-            </Tooltip>
+            <Button
+              type="primary"
+              icon={<CameraFilled />}
+              onClick={autoTakePhoto}
+              disabled={imageList.length >= maximumImageRegister}
+              loading={capProcessing}
+            >
+              Chụp ảnh tự động
+            </Button>
+            <Button
+              type="primary"
+              icon={<UndoOutlined />}
+              onClick={() => setImageList([])}
+              disabled={imageList.length == 0}
+            >
+              Chụp lại / Retake
+            </Button>
           </Space>
         </Col>
         <Col key="col-2" md={10}>
@@ -493,7 +535,8 @@ function CaptureFaceComponent({
                 return (
                   <Image
                     key={index}
-                    height={100}
+                    width={120}
+                    height={(16 * 120) / 9}
                     src={rec}
                     className="boxShadow89"
                     preview={true}
@@ -506,8 +549,8 @@ function CaptureFaceComponent({
                   return (
                     <Image
                       key={index + imageList.length}
-                      height={100}
-                      width={1600 / 9}
+                      width={120}
+                      height={(16 * 120) / 9}
                       src={Config.ImagePlaceHolder}
                       className="boxShadow89"
                     />

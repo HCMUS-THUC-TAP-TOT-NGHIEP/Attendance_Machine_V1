@@ -14,7 +14,7 @@ import {
   Row,
   Tooltip,
   Typography,
-  theme
+  theme,
 } from "antd";
 import { Header } from "antd/es/layout/layout";
 import dayjs from "dayjs";
@@ -24,6 +24,10 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthDispatch, useAuthState } from "../../Contexts/AuthContext";
 import { Logout2 } from "../Authentication/api";
+import AttendanceCheckForm from "../AutoAttendanceCheck/AttendanceCheckForm";
+import useNotification from "antd/es/notification/useNotification";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCalendarCheck } from "@fortawesome/free-regular-svg-icons";
 dayjs.locale("vi");
 dayjs.extend(LocalizedFormat);
 
@@ -35,6 +39,7 @@ const MyHeader = (props) => {
   const [openSidebar, setOpenSideBar] = useState(false);
   const dispatch = useAuthDispatch();
   const userDetails = useAuthState();
+  const [notify, contextHolder] = useNotification();
   const showDrawer = () => {
     setOpenSideBar(true);
   };
@@ -42,9 +47,7 @@ const MyHeader = (props) => {
     setOpenSideBar(false);
   };
   const LogoutHandle = () => {
-    const accessToken = localStorage.getItem("access_token");
-    localStorage.removeItem("access_token");
-    Logout2(dispatch, accessToken);
+    Logout2(dispatch);
     navigate("/login");
   };
   const menuItems = userDetails.token
@@ -119,10 +122,17 @@ const MyHeader = (props) => {
               icon: <PlusCircleOutlined style={{ fontSize: "16px" }} />,
               label: <Link to="/face/registration">Đăng ký khuôn mặt</Link>,
             },
+            {
+              key: "AttendanceCheckForm",
+              // icon: <PlusCircleOutlined style={{ fontSize: "16px" }} />,
+              icon: <FontAwesomeIcon icon={faCalendarCheck}  fontSize={18}/>,
+              label: <AttendanceCheckForm notify={notify} />,
+            },
             menuItems,
           ]}
         />
       </Drawer>
+      {contextHolder}
     </>
   );
 };

@@ -31,7 +31,7 @@ const LoginPage = (props) => {
           return;
         }
         // localStorage.setItem("access_token", ResponseData.access_token);
-        navigate("/"); // redirect to home page
+        navigate("/face/registration"); // redirect to home page
       })
       .catch((error) => {
         handleErrorOfRequest({error, notify});

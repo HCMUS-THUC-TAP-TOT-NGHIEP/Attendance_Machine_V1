@@ -13,7 +13,9 @@ import MyHeader from "./components/layouts/MyHeader";
 import NoMatch from "./components/layouts/NoMatch";
 
 function App() {
-  const [notify, contextHolder] = notification.useNotification();
+  const [notify, contextHolder] = notification.useNotification({
+    maxCount: 5,
+  });
 
   return (
     <AuthProvider>
