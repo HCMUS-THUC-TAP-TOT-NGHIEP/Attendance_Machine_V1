@@ -125,9 +125,9 @@ const AutoAttendanceCheck = (props) => {
           video,
           detections[0].detection.box
         );
-        // await recognitionBE(detections[0].descriptor, pictureSrcList[0]);
+        await recognitionBE(detections[0].descriptor, pictureSrcList[0]);
         // pictureSrcList.forEach(async (pictureSrc) => {
-        // await recognitionBE(detections[0].descriptor, pictureSrc);
+        //   await recognitionBE(detections[0].descriptor, pictureSrc);
         // });
       }
       // }, Config.AttendanceCheckSeconds * 1000);
