@@ -15,28 +15,17 @@ import Config from "../config";
 
 const loadModels = async (dispatch) => {
   try {
+    console.log(new Date());
     dispatch({ type: "REQUEST_LOADING" });
     console.log("Loading models...");
     await Promise.all([
+      // FaceApi.nets.ssdMobilenetv1.loadFromUri("/models"),
       FaceApi.nets.tinyFaceDetector.loadFromUri("/models"),
-      FaceApi.nets.faceExpressionNet.loadFromUri("/models"),
-      FaceApi.nets.faceLandmark68Net.loadFromUri("/models"),
-      FaceApi.nets.ssdMobilenetv1.loadFromUri("/models"),
-      FaceApi.nets.faceRecognitionNet.loadFromUri("/models"),
+      // FaceApi.nets.tinyYolov2.loadFromUri("/models")
+      // FaceApi.nets.faceExpressionNet.loadFromUri("/models"),
+      // FaceApi.nets.faceLandmark68Net.loadFromUri("/models"),
+      // FaceApi.nets.faceRecognitionNet.loadFromUri("/models"),
     ]);
-    // await FaceApi.nets.tinyFaceDetector.loadFromUri("/models");
-    // await FaceApi.nets.faceExpressionNet.loadFromUri("/models");
-    // await FaceApi.nets.faceLandmark68Net.loadFromUri("/models");
-    // await FaceApi.nets.ssdMobilenetv1.loadFromUri("/models");
-    // await FaceApi.nets.faceRecognitionNet.loadFromUri("/models");
-
-    // await FaceApi.loadTinyFaceDetectorModel(Config.FaceApiModelFolder);
-    // await FaceApi.loadSsdMobilenetv1Model(Config.FaceApiModelFolder);
-    // await FaceApi.loadFaceExpressionModel(Config.FaceApiModelFolder);
-    // await FaceApi.loadFaceLandmarkTinyModel(Config.FaceApiModelFolder);
-    // await FaceApi.loadFaceLandmarkModel(Config.FaceApiModelFolder);
-    // await FaceApi.loadFaceDetectionModel(Config.FaceApiModelFolder);
-    // await FaceApi.loadFaceRecognitionModel(Config.FaceApiModelFolder);
 
     dispatch({ type: "LOADING_SUCCESS", payload: { FaceApi: FaceApi } });
   } catch (err) {
@@ -44,6 +33,7 @@ const loadModels = async (dispatch) => {
     dispatch({ type: "LOADING_ERROR", error: err });
   } finally {
     console.log("Finish Loading models...");
+    console.log(new Date());
   }
 };
 export { loadModels };

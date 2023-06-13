@@ -1,8 +1,8 @@
 export const handleErrorOfRequest = ({ error, notify, ...rest }) => {
   try {
     console.error(error);
-
-    if (error.code === "ECONNABORTED") {
+    const errorList = ["ECONNABORTED", "ERR_NETWORK"];
+    if (errorList.includes(error.code)) {
       notify.error({
         message: <b>Thông báo</b>,
         description:
@@ -10,6 +10,7 @@ export const handleErrorOfRequest = ({ error, notify, ...rest }) => {
       });
       return;
     }
+
     if (error.response) {
       notify.error({
         message: <b>Thông báo</b>,

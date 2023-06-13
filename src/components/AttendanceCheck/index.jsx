@@ -26,14 +26,11 @@ import {
   useFaceApiState,
 } from "../../Contexts/FaceApiContext";
 import { loadModels } from "../../FaceApi";
-import { LabeledFaceDescriptors } from "face-api.js";
 import { handleErrorOfRequest } from "../../utils/Helpers";
-// import { FaceApi, detectFaces, loadModels } from "../../FaceApi";
 dayjs.locale("vi");
 dayjs.extend(LocalizedFormat);
 const { Content } = Layout;
-// const { Canvas, Image, ImageData } = canvas_pack;
-// FaceApi.env.monkeyPatch({ Canvas, Image, ImageData });
+
 let timeout;
 let interval;
 
@@ -44,10 +41,8 @@ const AutoAttendanceCheck = (props) => {
   const navigate = useNavigate();
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
-  // const [picture, setPicture] = useState(null);
   const [videoswitch, setVideo] = useState(true);
   const [stream, setStream] = useState(null);
-  const [stopped, setStopped] = useState(false);
   const [employeeList, setEmployeeList] = useState([]);
   const {
     token: { colorInfoActive },
@@ -63,6 +58,14 @@ const AutoAttendanceCheck = (props) => {
   const handleCancel = () => {
     setOpen(false);
   };
+
+  useEffect(() => {
+    if (!videoswitch) {
+      if (interval) clearInterval(interval);
+      return;
+    }
+    handlePlayEvent();
+  }, [videoswitch]);
   const handleSearch = (value) => {
     if (timeout) {
       clearTimeout(timeout);
@@ -104,12 +107,10 @@ const AutoAttendanceCheck = (props) => {
       };
       FaceApi.matchDimensions(canvas, displaySize);
       const detections = await FaceApi.detectAllFaces(
-        video
-        // new FaceApi.TinyFaceDetectorOptions()
-      )
-        .withFaceLandmarks()
-        .withFaceExpressions()
-        .withFaceDescriptors();
+        video,
+        new FaceApi.TinyFaceDetectorOptions()
+      );
+      console.log(detections.length);
       if (detections && detections.length > 0) {
         // console.log("detections", detections);
         const resizedDetections = FaceApi.resizeResults(
@@ -121,10 +122,7 @@ const AutoAttendanceCheck = (props) => {
           .getContext("2d")
           .clearRect(0, 0, canvas.width + 50, canvas.height + 50);
         FaceApi.draw.drawDetections(canvas, resizedDetections);
-        var pictureSrcList = await extractFaceFromBox(
-          video,
-          detections[0].detection.box
-        );
+        var pictureSrcList = await extractFaceFromBox(video, detections[0].box);
         await recognitionBE(detections[0].descriptor, pictureSrcList[0]);
         // pictureSrcList.forEach(async (pictureSrc) => {
         //   await recognitionBE(detections[0].descriptor, pictureSrc);
@@ -137,13 +135,13 @@ const AutoAttendanceCheck = (props) => {
   // This function extract a face from video frame with giving bounding box and display result into outputimage
   async function extractFaceFromBox(inputImage, box) {
     const regionsToExtract = [
-      // new FaceApi.Rect(box.x, box.y, box.width + 50, box.height + 50),
-      new FaceApi.Rect(
-        box.x - 50,
-        box.y - 50,
-        box.width + 100,
-        box.height + 100
-      ),
+      new FaceApi.Rect(box.x, box.y, box.width, box.height),
+      // new FaceApi.Rect(
+      //   box.x - 50,
+      //   box.y - 50,
+      //   box.width + 100,
+      //   box.height + 100
+      // ),
     ];
     let faceImages = await FaceApi.extractFaces(inputImage, regionsToExtract);
     return faceImages.map((faceImage) => faceImage.toDataURL());
@@ -151,80 +149,80 @@ const AutoAttendanceCheck = (props) => {
 
   const recognitionBE = async (descriptor, pictureSrc) => {
     try {
-      var labeledDescriptors = LabeledDescriptors;
-      if (descriptor && labeledDescriptors.length) {
-        const faceMatcher = new FaceApi.FaceMatcher(labeledDescriptors);
-        const bestMatch = faceMatcher.findBestMatch(descriptor);
-        if (bestMatch.distance <= 1 - 0.75) {
-          // match trên 70%
-          console.log("in cache", bestMatch.distance);
-          var { Id, Name, Img } = JSON.parse(bestMatch.label);
-          notify.open({
-            description: (
-              <List key={Id} itemLayout="horizontal">
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={
-                      <Avatar
-                        shape="square"
-                        src={`data:image/png;base64,${Img}`}
-                        size={{
-                          xs: 24,
-                          sm: 32,
-                          md: 40,
-                          lg: 64,
-                          xl: 80,
-                          xxl: 100,
-                        }}
-                      />
-                    }
-                    title={"Xin chào, " + Name}
-                    description={Name}
-                  />
-                </List.Item>
-              </List>
-            ),
-            placement: "bottomLeft",
-            duration: 60,
-          });
-          return;
-        }
-      }
-      console.log("call AutoFaceRecognitionBE");
+      // var labeledDescriptors = LabeledDescriptors;
+      // if (descriptor && labeledDescriptors.length) {
+      //   const faceMatcher = new FaceApi.FaceMatcher(labeledDescriptors);
+      //   const bestMatch = faceMatcher.findBestMatch(descriptor);
+      //   if (bestMatch.distance <= 1 - 0.75) {
+      //     // match trên 70%
+      //     console.log("in cache", bestMatch.distance);
+      //     var { Id, Name, Img } = JSON.parse(bestMatch.label);
+      //     notify.open({
+      //       description: (
+      //         <List key={Id} itemLayout="horizontal">
+      //           <List.Item>
+      //             <List.Item.Meta
+      //               avatar={
+      //                 <Avatar
+      //                   shape="square"
+      //                   src={`data:image/png;base64,${Img}`}
+      //                   size={{
+      //                     xs: 24,
+      //                     sm: 32,
+      //                     md: 40,
+      //                     lg: 64,
+      //                     xl: 80,
+      //                     xxl: 100,
+      //                   }}
+      //                 />
+      //               }
+      //               title={"Xin chào, " + Name}
+      //               description={Name}
+      //             />
+      //           </List.Item>
+      //         </List>
+      //       ),
+      //       placement: "bottomLeft",
+      //       duration: 60,
+      //     });
+      //     return;
+      //   }
+      // }
       var response = await AutoFaceRecognitionBE(pictureSrc);
       if (response.Status === 1) {
         const { Id, Name, Img } = response.ResponseData;
-        if (descriptor) {
-          var labelIndex = labeledDescriptors.findIndex((ob) => {
-            return JSON.parse(ob.label).Id == Id;
-          });
-          // console.log("labelIndex", labelIndex);
-          if (labelIndex == -1) {
-            if (labeledDescriptors.length && labeledDescriptors.length >= 7) {
-              labeledDescriptors.shift();
-            }
-            labeledDescriptors.push(
-              new LabeledFaceDescriptors(JSON.stringify({ Id, Name, Img }), [
-                descriptor,
-              ])
-            );
-            // console.info("add labeledDescriptors");
-          } else {
-            if (labeledDescriptors[labelIndex].length >= 7) {
-              labeledDescriptors[labelIndex].shift();
-            }
-            // console.info("change labeledDescriptors[" + labelIndex + "]");
-            labeledDescriptors[labelIndex].descriptors.push(descriptor);
-          }
-          localStorage.setItem(
-            "labeledDescriptors",
-            JSON.stringify(labeledDescriptors)
-          );
-          faceApiDispatch({
-            type: "MODIFY_LABELED_DESCRIPTORS",
-            payload: { FaceApi, labeledDescriptors },
-          });
-        }
+        console.log(Id, Name);
+        // if (descriptor) {
+        //   var labelIndex = labeledDescriptors.findIndex((ob) => {
+        //     return JSON.parse(ob.label).Id == Id;
+        //   });
+        //   // console.log("labelIndex", labelIndex);
+        //   if (labelIndex == -1) {
+        //     if (labeledDescriptors.length && labeledDescriptors.length >= 7) {
+        //       labeledDescriptors.shift();
+        //     }
+        //     labeledDescriptors.push(
+        //       new LabeledFaceDescriptors(JSON.stringify({ Id, Name, Img }), [
+        //         descriptor,
+        //       ])
+        //     );
+        //     // console.info("add labeledDescriptors");
+        //   } else {
+        //     if (labeledDescriptors[labelIndex].length >= 7) {
+        //       labeledDescriptors[labelIndex].shift();
+        //     }
+        //     // console.info("change labeledDescriptors[" + labelIndex + "]");
+        //     labeledDescriptors[labelIndex].descriptors.push(descriptor);
+        //   }
+        //   localStorage.setItem(
+        //     "labeledDescriptors",
+        //     JSON.stringify(labeledDescriptors)
+        //   );
+        //   faceApiDispatch({
+        //     type: "MODIFY_LABELED_DESCRIPTORS",
+        //     payload: { FaceApi, labeledDescriptors },
+        //   });
+        // }
         notify.open({
           description: (
             <List key={Id} itemLayout="horizontal">
@@ -365,7 +363,7 @@ const AutoAttendanceCheck = (props) => {
             type="primary"
             size="large"
           >
-            Tắt camera
+            {videoswitch ? "Tắt camera" : "Mở camera"}
           </Button>
 
           <Modal
@@ -419,3 +417,4 @@ const AutoAttendanceCheck = (props) => {
 };
 
 export { AutoAttendanceCheck };
+export * from "./UploadImages";

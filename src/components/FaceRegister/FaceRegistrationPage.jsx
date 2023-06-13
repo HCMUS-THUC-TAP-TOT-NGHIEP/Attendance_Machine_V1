@@ -367,14 +367,14 @@ function CaptureFaceComponent({
       setCapProcessing(true);
       try {
         const detection = await FaceApi.detectSingleFace(
-          video
-          // new FaceApi.TinyFaceDetectorOptions()
+          video,
+          new FaceApi.TinyFaceDetectorOptions()
         );
         if (detection) {
           // console.log(detection);
           var pictureSrcList = await extractFaceFromBox(
             video,
-            detection.detection.box
+            detection.box
           );
           console.log("pictureSrcList", pictureSrcList);
           if (pictureSrcList && pictureSrcList.length != 0) {
@@ -408,37 +408,37 @@ function CaptureFaceComponent({
   };
 
   const detectFace = () => {
-    const video = webcamRef.current.video;
-    if (interval) {
-      clearInterval(interval);
-    }
-    interval = setInterval(async () => {
-      if (!FaceApi) return;
-      try {
-        const canvas = canvasRef.current;
-        const displaySize = {
-          width: video.offsetWidth,
-          height: video.offsetHeight,
-        };
-        FaceApi.matchDimensions(canvasRef.current, displaySize);
-        const detection = await FaceApi.detectSingleFace(
-          video,
-          new FaceApi.TinyFaceDetectorOptions()
-        ).withFaceExpressions();
-        if (detection) {
-          console.log(detection);
-          const resizedDetections = FaceApi.resizeResults(
-            detection,
-            displaySize
-          );
-          canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-          FaceApi.draw.drawDetections(canvas, resizedDetections);
-        }
-      } catch (error) {
-        console.log("detectFace", error);
-      }
-    }, Config.AttendanceCheckSeconds * 1000);
-    // }, 100);
+    // const video = webcamRef.current.video;
+    // if (interval) {
+    //   clearInterval(interval);
+    // }
+    // interval = setInterval(async () => {
+    //   if (!FaceApi) return;
+    //   try {
+    //     const canvas = canvasRef.current;
+    //     const displaySize = {
+    //       width: video.offsetWidth,
+    //       height: video.offsetHeight,
+    //     };
+    //     FaceApi.matchDimensions(canvasRef.current, displaySize);
+    //     const detection = await FaceApi.detectSingleFace(
+    //       video,
+    //       new FaceApi.TinyFaceDetectorOptions()
+    //     ).withFaceExpressions();
+    //     if (detection) {
+    //       console.log(detection);
+    //       const resizedDetections = FaceApi.resizeResults(
+    //         detection,
+    //         displaySize
+    //       );
+    //       canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    //       FaceApi.draw.drawDetections(canvas, resizedDetections);
+    //     }
+    //   } catch (error) {
+    //     console.log("detectFace", error);
+    //   }
+    // }, Config.AttendanceCheckSeconds * 1000);
+    // // }, 100);
   };
 
   const startVideo = () => {

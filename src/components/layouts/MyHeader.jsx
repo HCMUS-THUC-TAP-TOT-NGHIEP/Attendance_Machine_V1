@@ -24,7 +24,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthDispatch, useAuthState } from "../../Contexts/AuthContext";
 import { Logout2 } from "../Authentication/api";
-import AttendanceCheckForm from "../AutoAttendanceCheck/AttendanceCheckForm";
+import AttendanceCheckForm from "../AttendanceCheck/AttendanceCheckForm";
 import useNotification from "antd/es/notification/useNotification";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendarCheck } from "@fortawesome/free-regular-svg-icons";

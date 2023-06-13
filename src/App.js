@@ -3,7 +3,10 @@ import { Content } from "antd/es/layout/layout";
 import { Route, Routes } from "react-router";
 import { AuthProvider, FaceApiProvider } from "./Contexts";
 import LoginPage from "./components/Authentication/Login";
-import { AutoAttendanceCheck } from "./components/AutoAttendanceCheck";
+import {
+  AutoAttendanceCheck,
+  RecognitionByImagesComponent,
+} from "./components/AttendanceCheck";
 import {
   FaceRegistrationIndex,
   FaceRegistrationPage,
@@ -46,6 +49,10 @@ function App() {
                   }
                 />
               </Route>
+              <Route
+                path="/recognition/image"
+                element={<RecognitionByImagesComponent />}
+              ></Route>
               <Route path="*" element={<NoMatch notify={notify} />} />
             </Routes>
           </Content>
