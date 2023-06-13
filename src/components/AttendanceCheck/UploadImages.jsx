@@ -1,29 +1,25 @@
-import React, { useEffect, useRef, useState } from "react";
-import { loadModels } from "../../FaceApi";
-import { useFaceApiDispatch, useFaceApiState } from "../../Contexts";
 import {
   Button,
-  Col,
-  Descriptions,
   Image,
   Space,
   Spin,
-  Table,
-  Upload,
+  Table
 } from "antd";
 import useNotification from "antd/es/notification/useNotification";
-import { handleErrorOfRequest } from "../../utils/Helpers";
-import { UploadOutlined } from "@ant-design/icons";
-import "./style.css";
-import { AutoFaceRecognitionBE } from "./api";
 import Column from "antd/es/table/Column";
+import React, { useEffect, useRef, useState } from "react";
+import { useFaceApiDispatch, useFaceApiState } from "../../Contexts";
+import { loadModels } from "../../FaceApi";
+import { handleErrorOfRequest } from "../../utils/Helpers";
+import { AutoFaceRecognitionBE } from "./api";
+import "./style.css";
 export const RecognitionByImagesComponent = (props) => {
   const faceApiDispatch = useFaceApiDispatch();
   const faceApiState = useFaceApiState();
   const { FaceApi, loadedNeededModels } = faceApiState;
   const [imageList, setImageList] = useState([]);
   const [source, setSource] = useState([]);
-  const [notify, contextHolder] = useNotification({ placement: "bottom" });
+  const [notify, contextHolder] = useNotification({ placement: "bottomRight" });
   const [loading, setLoading] = useState(false);
   const [recogProcessing, setRecogProcessing] = useState(false);
   const [detectProcessing, setDetectProcessing] = useState(false);
@@ -104,42 +100,48 @@ export const RecognitionByImagesComponent = (props) => {
 
   const recognitionFace = async () => {
     if (imageList.length == 0) return;
-    // var pictureSrc = imageList[0];
     setRecogProcessing(true);
-    imageList.forEach(async (pictureSrc) => {
-      var res = {
+    var res = [];
+    for(var i = 0; i < imageList.length; i++) {
+      try {
+      let pictureSrc = imageList[i];
+
+      var temp = {
         src: pictureSrc,
       };
       var date0 = new Date();
-      try {
         var response = await AutoFaceRecognitionBE(pictureSrc);
         if (response.Status === 1) {
           const { Id, Name, Img } = response.ResponseData;
-          console.log(Id, Name);
-          res["result"] = `${Id} - ${Name}`;
+          temp["result"] = `${Id} - ${Name}`;
           notify.info({
             message: "Ok",
             description: `${Id}, ${Name}`,
           });
-          return;
         }
-        res["result"] = response.Description;
+        else
+        {
 
-        notify.error({
-          message: "Bad",
-          description: response.Description,
-        });
+          temp["result"] = response.Description;
+          notify.error({
+            message: "Bad",
+            description: response.Description,
+          });
+        }
       } catch (error) {
         handleErrorOfRequest({ notify, error });
       } finally {
         var date1 = new Date();
-        res["date0"] = date0.toLocaleString();
-        res["date1"] = date1.toLocaleString();
-        res["total"] = date1 - date0;
-        setResult([res, ...result]);
+        temp["date0"] = date0.toLocaleString();
+        temp["date1"] = date1.toLocaleString();
+        temp["total"] = date1 - date0;
         setRecogProcessing(false);
+        res.push(temp)
+
+
       }
-    });
+    }
+    setResult([...res, ...result]);
     setRecogProcessing(false);
   };
 
