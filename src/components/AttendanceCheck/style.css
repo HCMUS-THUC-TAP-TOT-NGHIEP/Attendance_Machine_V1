@@ -3,12 +3,6 @@
   position: relative;
 }
 
-#container img {
-  /* width: 100%;
-  max-width: 600px;
-  height: auto; */
-}
-
 #container canvas {
   position: absolute;
   top: 0;

@@ -1,10 +1,4 @@
-import {
-  Button,
-  Image,
-  Space,
-  Spin,
-  Table
-} from "antd";
+import { Button, Image, Space, Spin, Table } from "antd";
 import useNotification from "antd/es/notification/useNotification";
 import Column from "antd/es/table/Column";
 import React, { useEffect, useRef, useState } from "react";
@@ -49,9 +43,15 @@ export const RecognitionByImagesComponent = (props) => {
 
   async function uploadImage() {
     try {
+      setImageList([]);
       const imgFile = document.getElementById("myFileUpload").files[0];
-      const img = await FaceApi.bufferToImage(imgFile);
-      setSource(img.src);
+      FaceApi.bufferToImage(imgFile)
+        .then((img) => {
+          setSource(img.src);
+        })
+        .catch((error) => {
+          throw error;
+        });
     } catch (error) {
       console.error(error);
     }
@@ -60,6 +60,7 @@ export const RecognitionByImagesComponent = (props) => {
   async function detectionFace() {
     setDetectProcessing(false);
     try {
+      console.log("start detecting");
       const imgElement = imgRef.current;
       const canvas = canvasRef.current;
       const displaySize = {
@@ -72,6 +73,14 @@ export const RecognitionByImagesComponent = (props) => {
         new FaceApi.TinyFaceDetectorOptions()
       );
       if (detections && detections.length > 0) {
+        notify.info({
+          message: (
+            <div>
+              Phát hiện <b> {detections.length} </b> khuôn mặt
+            </div>
+          ),
+          placement: "top",
+        });
         const resizedDetections = FaceApi.resizeResults(
           detections,
           displaySize
@@ -90,6 +99,12 @@ export const RecognitionByImagesComponent = (props) => {
           faceImages.map((faceImage) => list.push(faceImage.toDataURL()));
         });
         setImageList(list);
+      } else {
+        setImageList([]);
+        notify.warning({
+          message: "Không tìm thấy khuôn mặt nào.",
+          placement: "top",
+        });
       }
     } catch (error) {
       console.error(error);
@@ -102,14 +117,14 @@ export const RecognitionByImagesComponent = (props) => {
     if (imageList.length == 0) return;
     setRecogProcessing(true);
     var res = [];
-    for(var i = 0; i < imageList.length; i++) {
+    for (var i = 0; i < imageList.length; i++) {
       try {
-      let pictureSrc = imageList[i];
+        let pictureSrc = imageList[i];
 
-      var temp = {
-        src: pictureSrc,
-      };
-      var date0 = new Date();
+        var temp = {
+          src: pictureSrc,
+        };
+        var date0 = new Date();
         var response = await AutoFaceRecognitionBE(pictureSrc);
         if (response.Status === 1) {
           const { Id, Name, Img } = response.ResponseData;
@@ -118,10 +133,7 @@ export const RecognitionByImagesComponent = (props) => {
             message: "Ok",
             description: `${Id}, ${Name}`,
           });
-        }
-        else
-        {
-
+        } else {
           temp["result"] = response.Description;
           notify.error({
             message: "Bad",
@@ -136,9 +148,7 @@ export const RecognitionByImagesComponent = (props) => {
         temp["date1"] = date1.toLocaleString();
         temp["total"] = date1 - date0;
         setRecogProcessing(false);
-        res.push(temp)
-
-
+        res.push(temp);
       }
     }
     setResult([...res, ...result]);
@@ -190,7 +200,7 @@ export const RecognitionByImagesComponent = (props) => {
         <div>
           <Table
             dataSource={result}
-            rowKey={"start"}
+            rowKey="start"
             // scroll={{ x: 600, y: 600 }}
             bordered
             pagination={{
