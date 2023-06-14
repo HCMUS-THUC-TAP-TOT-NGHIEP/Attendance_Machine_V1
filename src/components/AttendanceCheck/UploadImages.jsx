@@ -136,7 +136,7 @@ export const RecognitionByImagesComponent = (props) => {
         } else {
           temp["result"] = response.Description;
           notify.error({
-            message: "Bad",
+            message: <b>Thông báo</b>,
             description: response.Description,
           });
         }

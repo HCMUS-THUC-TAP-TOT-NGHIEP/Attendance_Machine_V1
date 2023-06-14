@@ -11,7 +11,10 @@ import {
   Col,
   Drawer,
   Form,
+  Image,
+  InputNumber,
   Menu,
+  Modal,
   Row,
   Select,
   Tooltip,
@@ -22,20 +25,18 @@ import { Header } from "antd/es/layout/layout";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthDispatch, useAuthState } from "../../Contexts/AuthContext";
 import { Logout2 } from "../Authentication/api";
-import { SearchEmployeeBE } from "./api";
+import { CheckinWithEmployeeId, SearchEmployeeBE } from "./api";
 import { handleErrorOfRequest } from "../../utils/Helpers";
+import Webcam from "react-webcam";
 dayjs.locale("vi");
 dayjs.extend(LocalizedFormat);
 let timeout;
 
 const AttendanceCheckForm = ({ notify, ...rest }) => {
-  const {
-    token: { colorBgContainer },
-  } = theme.useToken();
   const navigate = useNavigate();
   const [openSidebar, setOpenSideBar] = useState(false);
   const dispatch = useAuthDispatch();
@@ -43,12 +44,48 @@ const AttendanceCheckForm = ({ notify, ...rest }) => {
   const [employeeList, setEmployeeList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const webcamRef = useRef(null);
+  const [imgSrc, setImgSrc] = useState(null);
+  const [form] = Form.useForm();
   const showDrawer = () => {
     setOpenSideBar(true);
   };
   const onClose = () => {
+    setEmployeeList([]);
+    setImgSrc(null);
     setOpenSideBar(false);
+    form.resetFields(["EmployeeId"]);
   };
+
+  const onChecking = useCallback(
+    async (values) => {
+      console.log(values);
+      setProcessing(true);
+      try {
+        if (!webcamRef.current) {
+          throw new Error("Không thể chụp hình của nhân viên.");
+        }
+        console.log(webcamRef.current);
+        values["Image"] = webcamRef.current.getScreenshot();
+        setImgSrc(values["Image"]);
+
+        console.log(values);
+        const response = await CheckinWithEmployeeId(values);
+        if (response.Status == 1) {
+          notify.success({
+            description: "Đã chấm công",
+          });
+          return;
+        }
+        throw new Error(response.Description);
+      } catch (error) {
+        handleErrorOfRequest({ error, notify });
+      } finally {
+        setProcessing(false);
+      }
+    },
+    [webcamRef]
+  );
 
   const handleSearch = (value) => {
     if (timeout) {
@@ -63,7 +100,6 @@ const AttendanceCheckForm = ({ notify, ...rest }) => {
         .then((response) => {
           const { Status, ResponseData } = response;
           if (Status === 1) {
-            console.log(response);
             setEmployeeList(ResponseData);
           }
         })
@@ -81,9 +117,25 @@ const AttendanceCheckForm = ({ notify, ...rest }) => {
     }
   };
 
-  const onChecking = async (values) => {
+  const onChecking_ = async (values) => {
     setProcessing(true);
     try {
+      if (!webcamRef.current) {
+        throw new Error("Không thể chụp hình của nhân viên.");
+      }
+      console.log(webcamRef.current);
+      values["Image"] = webcamRef.current.getScreenshot();
+      setImgSrc(values["Image"]);
+
+      console.log(values);
+      const response = await CheckinWithEmployeeId(values);
+      if (response.Status == 1) {
+        notify.success({
+          description: "Đã chấm công",
+        });
+        return;
+      }
+      throw new Error(response.Description);
     } catch (error) {
       handleErrorOfRequest({ error, notify });
     } finally {
@@ -102,7 +154,23 @@ const AttendanceCheckForm = ({ notify, ...rest }) => {
         onClose={onClose}
         open={openSidebar}
       >
-        <Form layout="vertical" onFinish={onChecking}>
+        <Webcam
+          height={600}
+          width={600}
+          ref={webcamRef}
+          autoPlay={true}
+          screenshotFormat="image/png"
+          // hidden
+        />
+        <Form layout="vertical" onFinish={onChecking} form={form}>
+          <Form.Item
+            label="Phương thức chấm công"
+            name="Method"
+            initialValue={2}
+            hidden
+          >
+            <InputNumber value={2} />
+          </Form.Item>
           <Form.Item
             label="Nhân viên"
             name="EmployeeId"
@@ -112,7 +180,6 @@ const AttendanceCheckForm = ({ notify, ...rest }) => {
                 message: "Vui lòng nhập từ khóa để tìm nhân viên!",
               },
             ]}
-            hasFeedback
             tooltip="Cung cấp mã nhân viên để chấm công khi không nhận diện được khuôn mặt"
             help="Nhập mã hoặc tên nhân viên để tìm kiếm"
           >
@@ -142,6 +209,7 @@ const AttendanceCheckForm = ({ notify, ...rest }) => {
             </Button>
           </Form.Item>
         </Form>
+        <Image src={imgSrc} width={100} />
       </Drawer>
     </>
   );

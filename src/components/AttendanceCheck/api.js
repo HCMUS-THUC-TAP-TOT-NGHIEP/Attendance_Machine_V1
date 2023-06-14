@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import axios from "axios";
 import Config from "../../config";
 let AxiosInstance = axios.create({
@@ -22,28 +21,9 @@ const AutoFaceRecognitionBE = async (pictureSrc) => {
   requestData["AttendanceTime"] = new Date();
   var response = await AxiosInstance.post("api/face/recognition", requestData, {
     headers: {
-      "Content-Type": "application/json"
-    }
+      "Content-Type": "application/json",
+    },
   });
-
-  // let formData = new FormData();
-
-  // const file = new File([pictureSrc], "webcam-frame.png", {
-  //   type: "image/png",
-  // });
-  // formData.append("Picture", file);
-  // formData.append("AttendanceTime", new Date());
-  // if (process.env.NODE_ENV !== "production") {
-  //   const uuid = require("uuid");
-  //   const id = uuid.v4();
-  //   formData.append("uuid", id);
-  // }
-  // var response = await AxiosInstance.post("api/face/recognition", formData, {
-  //   headers: {
-  //     "Content-Type": "multipart/form-data",
-  //   },
-  // });
-
   return response.data;
 };
 
@@ -62,4 +42,24 @@ const SearchEmployeeBE = async (request) => {
   return response.data;
 };
 
-export { AutoFaceRecognitionBE, SearchEmployeeBE };
+const CheckinWithEmployeeId = async (request) => {
+  let formData = new FormData();
+  formData.append("Image", request.Image);
+  formData.append("Method", request.Method);
+  formData.append("EmployeeId", request.EmployeeId);
+  console.log(new Date().toISOString());
+  formData.append(
+    "AttendanceTime",
+    request.AttendanceTime || new Date().toISOString()
+  );
+
+  var response = await AxiosInstance.post("api/checkin/new", formData, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response.data;
+};
+
+export { AutoFaceRecognitionBE, CheckinWithEmployeeId, SearchEmployeeBE };
