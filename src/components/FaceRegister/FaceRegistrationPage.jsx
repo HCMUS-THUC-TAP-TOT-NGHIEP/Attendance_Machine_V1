@@ -372,10 +372,7 @@ function CaptureFaceComponent({
         );
         if (detection) {
           // console.log(detection);
-          var pictureSrcList = await extractFaceFromBox(
-            video,
-            detection.box
-          );
+          var pictureSrcList = await extractFaceFromBox(video, detection.box);
           console.log("pictureSrcList", pictureSrcList);
           if (pictureSrcList && pictureSrcList.length != 0) {
             setImageList([...imageList, pictureSrcList[0]]);
@@ -536,7 +533,6 @@ function CaptureFaceComponent({
                   <Image
                     key={index}
                     width={120}
-                    height={(16 * 120) / 9}
                     src={rec}
                     className="boxShadow89"
                     preview={true}
@@ -550,7 +546,6 @@ function CaptureFaceComponent({
                     <Image
                       key={index + imageList.length}
                       width={120}
-                      height={(16 * 120) / 9}
                       src={Config.ImagePlaceHolder}
                       className="boxShadow89"
                     />

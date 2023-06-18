@@ -1,50 +1,31 @@
 import {
-  CameraOutlined,
-  LoginOutlined,
-  LogoutOutlined,
-  MenuUnfoldOutlined,
-  PlusCircleOutlined,
-  RollbackOutlined,
-} from "@ant-design/icons";
-import {
   Button,
-  Col,
   Drawer,
   Form,
   Image,
   InputNumber,
-  Menu,
-  Modal,
-  Row,
   Select,
-  Tooltip,
   Typography,
-  theme,
 } from "antd";
-import { Header } from "antd/es/layout/layout";
 import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuthDispatch, useAuthState } from "../../Contexts/AuthContext";
-import { Logout2 } from "../Authentication/api";
-import { CheckinWithEmployeeId, SearchEmployeeBE } from "./api";
-import { handleErrorOfRequest } from "../../utils/Helpers";
+import React, { useCallback, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Webcam from "react-webcam";
+import { handleErrorOfRequest } from "../../utils/Helpers";
+import { CheckinWithEmployeeId, SearchEmployeeBE } from "./api";
 dayjs.locale("vi");
 dayjs.extend(LocalizedFormat);
 let timeout;
 
-const AttendanceCheckForm = ({ notify, ...rest }) => {
+const AttendanceCheckForm = ({ notify, webcamRef, ...rest }) => {
   const navigate = useNavigate();
   const [openSidebar, setOpenSideBar] = useState(false);
-  const dispatch = useAuthDispatch();
-  const userDetails = useAuthState();
   const [employeeList, setEmployeeList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const webcamRef = useRef(null);
+  // const webcamRef = useRef(null);
   const [imgSrc, setImgSrc] = useState(null);
   const [form] = Form.useForm();
   const showDrawer = () => {
@@ -59,13 +40,13 @@ const AttendanceCheckForm = ({ notify, ...rest }) => {
 
   const onChecking = useCallback(
     async (values) => {
-      console.log(values);
+      console.log(webcamRef);
       setProcessing(true);
       try {
+        console.log(webcamRef.current);
         if (!webcamRef.current) {
           throw new Error("Không thể chụp hình của nhân viên.");
         }
-        console.log(webcamRef.current);
         values["Image"] = webcamRef.current.getScreenshot();
         setImgSrc(values["Image"]);
 
@@ -74,6 +55,7 @@ const AttendanceCheckForm = ({ notify, ...rest }) => {
         if (response.Status == 1) {
           notify.success({
             description: "Đã chấm công",
+            placement: "bottomRight",
           });
           return;
         }
@@ -117,32 +99,6 @@ const AttendanceCheckForm = ({ notify, ...rest }) => {
     }
   };
 
-  const onChecking_ = async (values) => {
-    setProcessing(true);
-    try {
-      if (!webcamRef.current) {
-        throw new Error("Không thể chụp hình của nhân viên.");
-      }
-      console.log(webcamRef.current);
-      values["Image"] = webcamRef.current.getScreenshot();
-      setImgSrc(values["Image"]);
-
-      console.log(values);
-      const response = await CheckinWithEmployeeId(values);
-      if (response.Status == 1) {
-        notify.success({
-          description: "Đã chấm công",
-        });
-        return;
-      }
-      throw new Error(response.Description);
-    } catch (error) {
-      handleErrorOfRequest({ error, notify });
-    } finally {
-      setProcessing(false);
-    }
-  };
-
   return (
     <>
       <Typography.Text onClick={showDrawer}>
@@ -154,14 +110,6 @@ const AttendanceCheckForm = ({ notify, ...rest }) => {
         onClose={onClose}
         open={openSidebar}
       >
-        <Webcam
-          height={600}
-          width={600}
-          ref={webcamRef}
-          autoPlay={true}
-          screenshotFormat="image/png"
-          // hidden
-        />
         <Form layout="vertical" onFinish={onChecking} form={form}>
           <Form.Item
             label="Phương thức chấm công"

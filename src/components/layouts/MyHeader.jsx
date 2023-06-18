@@ -12,6 +12,7 @@ import {
   Drawer,
   Menu,
   Row,
+  Space,
   Tooltip,
   Typography,
   theme,
@@ -28,10 +29,12 @@ import AttendanceCheckForm from "../AttendanceCheck/AttendanceCheckForm";
 import useNotification from "antd/es/notification/useNotification";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendarCheck } from "@fortawesome/free-regular-svg-icons";
+import { ReactComponent as Logo } from "../../logo.svg";
+
 dayjs.locale("vi");
 dayjs.extend(LocalizedFormat);
 
-const MyHeader = (props) => {
+const MyHeader = ({ webcamRef, ...props }) => {
   const {
     token: { colorBgContainer },
   } = theme.useToken();
@@ -87,9 +90,12 @@ const MyHeader = (props) => {
             </Tooltip>
           </Col>
           <Col flex="auto">
-            <Typography.Title level={2} style={{ margin: 0 }}>
-              Máy chấm công
-            </Typography.Title>
+            <Row align="middle">
+              <Logo style={{ width: 31, height: 31, marginRight: 10 }} />
+              <Typography.Title level={2} style={{ margin: 0 }}>
+                Máy chấm công
+              </Typography.Title>
+            </Row>
           </Col>
           <Col flex="none">
             <Tooltip title="Menu">
@@ -109,7 +115,6 @@ const MyHeader = (props) => {
         onClose={onClose}
         open={openSidebar}
       >
-        <div className="logo" />
         <Menu
           items={[
             {
@@ -125,8 +130,10 @@ const MyHeader = (props) => {
             {
               key: "AttendanceCheckForm",
               // icon: <PlusCircleOutlined style={{ fontSize: "16px" }} />,
-              icon: <FontAwesomeIcon icon={faCalendarCheck}  fontSize={18}/>,
-              label: <AttendanceCheckForm notify={notify} />,
+              icon: <FontAwesomeIcon icon={faCalendarCheck} fontSize={18} />,
+              label: (
+                <AttendanceCheckForm notify={notify} webcamRef={webcamRef} />
+              ),
             },
             menuItems,
           ]}
