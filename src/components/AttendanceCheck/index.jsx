@@ -153,7 +153,8 @@ const AutoAttendanceCheck = ({ webcamRef, props }) => {
                   avatar={
                     <Avatar
                       shape="square"
-                      src={`data:image/png;base64,${Img}`}
+                      // src={`data:image/png;base64,${Img}`}
+                      src={pictureSrc}
                       size={{
                         xs: 24,
                         sm: 32,
