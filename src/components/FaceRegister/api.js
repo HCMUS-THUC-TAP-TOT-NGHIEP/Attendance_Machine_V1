@@ -16,6 +16,7 @@ const RegisterFaceBE = async (requestData) => {
     headers: {
       "Access-Control-Allow-Origin": "*",
       Authorization: "Bearer " + access_token,
+      
     },
   });
   return response.data;

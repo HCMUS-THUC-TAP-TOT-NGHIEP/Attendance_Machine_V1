@@ -59,13 +59,14 @@ export const LoginAccount2 = async (dispatch, requestData) => {
   }
 };
 
-export const Logout2 = async (dispatch, access_token) => {
+export const Logout2 = async (dispatch) => {
   dispatch({ type: "LOGOUT" });
   var response = await AxiosInstance.post("api/auth/logout", null, {
     headers: {
       "Access-Control-Allow-Origin": "*",
-      Authorization: "Bearer " + access_token,
+      Authorization: "Bearer " + localStorage.getItem("access_token"),
     },
   });
+  localStorage.removeItem("access_token");
   return response.data;
 };

@@ -26,25 +26,23 @@ import {
   useFaceApiState,
 } from "../../Contexts/FaceApiContext";
 import { loadModels } from "../../FaceApi";
-import { LabeledFaceDescriptors } from "face-api.js";
-// import { FaceApi, detectFaces, loadModels } from "../../FaceApi";
+import { handleErrorOfRequest } from "../../utils/Helpers";
 dayjs.locale("vi");
 dayjs.extend(LocalizedFormat);
 const { Content } = Layout;
-// const { Canvas, Image, ImageData } = canvas_pack;
-// FaceApi.env.monkeyPatch({ Canvas, Image, ImageData });
+
 let timeout;
 let interval;
 
-const AutoAttendanceCheck = (props) => {
+const AutoAttendanceCheck = ({ webcamRef, props }) => {
   const [notify, contextHolder] = notification.useNotification({
     maxCount: 3,
   });
   const navigate = useNavigate();
-  const webcamRef = useRef(null);
+  // const webcamRef = useRef(null);
   const canvasRef = useRef(null);
-  // const [picture, setPicture] = useState(null);
-  const [stopped, setStopped] = useState(false);
+  const [videoswitch, setVideo] = useState(true);
+  const [stream, setStream] = useState(null);
   const [employeeList, setEmployeeList] = useState([]);
   const {
     token: { colorInfoActive },
@@ -60,6 +58,14 @@ const AutoAttendanceCheck = (props) => {
   const handleCancel = () => {
     setOpen(false);
   };
+
+  useEffect(() => {
+    if (!videoswitch) {
+      if (interval) clearInterval(interval);
+      return;
+    }
+    handlePlayEvent();
+  }, [videoswitch]);
   const handleSearch = (value) => {
     if (timeout) {
       clearTimeout(timeout);
@@ -76,7 +82,9 @@ const AutoAttendanceCheck = (props) => {
             setEmployeeList(ResponseData);
           }
         })
-        .catch((error) => {})
+        .catch((error) => {
+          handleErrorOfRequest({ error, notify });
+        })
         .finally({});
     }
     if (value) {
@@ -99,14 +107,10 @@ const AutoAttendanceCheck = (props) => {
       };
       FaceApi.matchDimensions(canvas, displaySize);
       const detections = await FaceApi.detectAllFaces(
-        video
-        // new FaceApi.TinyFaceDetectorOptions()
-      )
-        .withFaceLandmarks()
-        .withFaceExpressions()
-        .withFaceDescriptors();
+        video,
+        new FaceApi.TinyFaceDetectorOptions()
+      );
       if (detections && detections.length > 0) {
-        // console.log("detections", detections);
         const resizedDetections = FaceApi.resizeResults(
           detections,
           displaySize
@@ -116,29 +120,20 @@ const AutoAttendanceCheck = (props) => {
           .getContext("2d")
           .clearRect(0, 0, canvas.width + 50, canvas.height + 50);
         FaceApi.draw.drawDetections(canvas, resizedDetections);
-        var pictureSrcList = await extractFaceFromBox(
-          video,
-          detections[0].detection.box
-        );
-        await recognitionBE(detections[0].descriptor, pictureSrcList[0]);
-        // pictureSrcList.forEach(async (pictureSrc) => {
-        // await recognitionBE(detections[0].descriptor, pictureSrc);
-        // });
+        detections.forEach(async (detection) => {
+          var pictureSrcList = await extractFaceFromBox(video, detection.box);
+          await recognitionBE(detection.descriptor, pictureSrcList[0]);
+        });
+        // var pictureSrcList = await extractFaceFromBox(video, detections[0].box);
+        // await recognitionBE(detections[0].descriptor, pictureSrcList[0]);
       }
-      // }, Config.AttendanceCheckSeconds * 1000);
-    }, 1000);
+    }, 2000);
   };
 
   // This function extract a face from video frame with giving bounding box and display result into outputimage
   async function extractFaceFromBox(inputImage, box) {
     const regionsToExtract = [
-      // new FaceApi.Rect(box.x, box.y, box.width + 50, box.height + 50),
-      new FaceApi.Rect(
-        box.x - 50,
-        box.y - 50,
-        box.width + 100,
-        box.height + 100
-      ),
+      new FaceApi.Rect(box.x, box.y, box.width, box.height),
     ];
     let faceImages = await FaceApi.extractFaces(inputImage, regionsToExtract);
     return faceImages.map((faceImage) => faceImage.toDataURL());
@@ -146,80 +141,10 @@ const AutoAttendanceCheck = (props) => {
 
   const recognitionBE = async (descriptor, pictureSrc) => {
     try {
-      var labeledDescriptors = LabeledDescriptors;
-      if (descriptor && labeledDescriptors.length) {
-        const faceMatcher = new FaceApi.FaceMatcher(labeledDescriptors);
-        const bestMatch = faceMatcher.findBestMatch(descriptor);
-        if (bestMatch.distance <= 1 - 0.75) {
-          // match trên 70%
-          console.log("in cache", bestMatch.distance);
-          var { Id, Name, Img } = JSON.parse(bestMatch.label);
-          notify.open({
-            description: (
-              <List key={Id} itemLayout="horizontal">
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={
-                      <Avatar
-                        shape="square"
-                        src={`data:image/png;base64,${Img}`}
-                        size={{
-                          xs: 24,
-                          sm: 32,
-                          md: 40,
-                          lg: 64,
-                          xl: 80,
-                          xxl: 100,
-                        }}
-                      />
-                    }
-                    title={"Xin chào, " + Name}
-                    description={Name}
-                  />
-                </List.Item>
-              </List>
-            ),
-            placement: "bottomLeft",
-            duration: 60,
-          });
-          return;
-        }
-      }
-      console.log("call AutoFaceRecognitionBE");
       var response = await AutoFaceRecognitionBE(pictureSrc);
       if (response.Status === 1) {
         const { Id, Name, Img } = response.ResponseData;
-        if (descriptor) {
-          var labelIndex = labeledDescriptors.findIndex((ob) => {
-            return JSON.parse(ob.label).Id == Id;
-          });
-          // console.log("labelIndex", labelIndex);
-          if (labelIndex == -1) {
-            if (labeledDescriptors.length && labeledDescriptors.length >= 5) {
-              labeledDescriptors.shift();
-            }
-            labeledDescriptors.push(
-              new LabeledFaceDescriptors(JSON.stringify({ Id, Name, Img }), [
-                descriptor,
-              ])
-            );
-            // console.info("add labeledDescriptors");
-          } else {
-            if (labeledDescriptors[labelIndex].length >= 5) {
-              labeledDescriptors[labelIndex].shift();
-            }
-            // console.info("change labeledDescriptors[" + labelIndex + "]");
-            labeledDescriptors[labelIndex].descriptors.push(descriptor);
-          }
-          localStorage.setItem(
-            "labeledDescriptors",
-            JSON.stringify(labeledDescriptors)
-          );
-          faceApiDispatch({
-            type: "MODIFY_LABELED_DESCRIPTORS",
-            payload: { FaceApi, labeledDescriptors },
-          });
-        }
+        console.log(Id, Name);
         notify.open({
           description: (
             <List key={Id} itemLayout="horizontal">
@@ -228,7 +153,8 @@ const AutoAttendanceCheck = (props) => {
                   avatar={
                     <Avatar
                       shape="square"
-                      src={`data:image/png;base64,${Img}`}
+                      // src={`data:image/png;base64,${Img}`}
+                      src={pictureSrc}
                       size={{
                         xs: 24,
                         sm: 32,
@@ -249,29 +175,10 @@ const AutoAttendanceCheck = (props) => {
           duration: 60,
         });
       } else {
-        // console.error(response.Description);
+        console.error(response.Description);
       }
     } catch (error) {
-      console.error(error);
-      if (error.response) {
-        notify.error({
-          message: "Có lỗi ở response.",
-          description: `[${error.response.statusText}]`,
-          placement: "bottomLeft",
-        });
-      } else if (error.request) {
-        notify.error({
-          message: "Có lỗi ở request.",
-          description: error,
-          placement: "bottomLeft",
-        });
-      } else {
-        notify.error({
-          message: "Có lỗi ở máy khách",
-          description: error.message,
-          placement: "bottomLeft",
-        });
-      }
+      handleErrorOfRequest({ error, notify });
     } finally {
     }
   };
@@ -283,24 +190,39 @@ const AutoAttendanceCheck = (props) => {
         if (!FaceApi) {
           await loadModels(faceApiDispatch);
         }
-        startVideo();
+        navigator.mediaDevices
+          .getUserMedia({ audio: false, video: true })
+          .then((stream) => {
+            webcamRef.current.video.srcObject = stream;
+            setStream(stream);
+          })
+          .catch((error) => {
+            throw error;
+          });
       } catch (error) {
-        notify.error({ message: error });
+        handleErrorOfRequest({ error, notify });
       }
     };
     initial();
     return () => clearInterval(interval);
   }, []);
 
-  const startVideo = () => {
-    navigator.mediaDevices
-      .getUserMedia({ audio: false, video: true })
-      .then((stream) => {
-        webcamRef.current.video.srcObject = stream;
-      })
-      .catch((error) => {
-        console.error(error);
+  const handleVideo = () => {
+    if (videoswitch) {
+      setVideo(false);
+      stream.getTracks().forEach(function (track) {
+        if (track.readyState === "live" && track.kind === "video") {
+          track.enabled = false;
+        }
       });
+    } else {
+      setVideo(true);
+      stream.getTracks().forEach(function (track) {
+        if (track.readyState === "live" && track.kind === "video") {
+          track.enabled = true;
+        }
+      });
+    }
   };
 
   return (
@@ -341,7 +263,7 @@ const AutoAttendanceCheck = (props) => {
             style={{ zIndex: 101, position: "absolute" }}
           />
           <Button
-            onClick={showModal}
+            onClick={handleVideo}
             className="boxShadow89"
             style={{
               position: "absolute",
@@ -352,8 +274,9 @@ const AutoAttendanceCheck = (props) => {
             type="primary"
             size="large"
           >
-            Chấm công bằng mã nhân viên
+            {videoswitch ? "Tắt camera" : "Mở camera"}
           </Button>
+
           <Modal
             open={open}
             title={<div level={5}>Cung cấp mã nhân viên </div>}
@@ -405,3 +328,4 @@ const AutoAttendanceCheck = (props) => {
 };
 
 export { AutoAttendanceCheck };
+export * from "./UploadImages";

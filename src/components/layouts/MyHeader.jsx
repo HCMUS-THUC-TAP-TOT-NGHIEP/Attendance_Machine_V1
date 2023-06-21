@@ -12,9 +12,10 @@ import {
   Drawer,
   Menu,
   Row,
+  Space,
   Tooltip,
   Typography,
-  theme
+  theme,
 } from "antd";
 import { Header } from "antd/es/layout/layout";
 import dayjs from "dayjs";
@@ -24,10 +25,16 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthDispatch, useAuthState } from "../../Contexts/AuthContext";
 import { Logout2 } from "../Authentication/api";
+import AttendanceCheckForm from "../AttendanceCheck/AttendanceCheckForm";
+import useNotification from "antd/es/notification/useNotification";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCalendarCheck } from "@fortawesome/free-regular-svg-icons";
+import { ReactComponent as Logo } from "../../logo.svg";
+
 dayjs.locale("vi");
 dayjs.extend(LocalizedFormat);
 
-const MyHeader = (props) => {
+const MyHeader = ({ webcamRef, ...props }) => {
   const {
     token: { colorBgContainer },
   } = theme.useToken();
@@ -35,6 +42,7 @@ const MyHeader = (props) => {
   const [openSidebar, setOpenSideBar] = useState(false);
   const dispatch = useAuthDispatch();
   const userDetails = useAuthState();
+  const [notify, contextHolder] = useNotification();
   const showDrawer = () => {
     setOpenSideBar(true);
   };
@@ -42,9 +50,7 @@ const MyHeader = (props) => {
     setOpenSideBar(false);
   };
   const LogoutHandle = () => {
-    const accessToken = localStorage.getItem("access_token");
-    localStorage.removeItem("access_token");
-    Logout2(dispatch, accessToken);
+    Logout2(dispatch);
     navigate("/login");
   };
   const menuItems = userDetails.token
@@ -84,9 +90,12 @@ const MyHeader = (props) => {
             </Tooltip>
           </Col>
           <Col flex="auto">
-            <Typography.Title level={2} style={{ margin: 0 }}>
-              Máy chấm công
-            </Typography.Title>
+            <Row align="middle">
+              <Logo style={{ width: 31, height: 31, marginRight: 10 }} />
+              <Typography.Title level={2} style={{ margin: 0 }}>
+                Máy chấm công
+              </Typography.Title>
+            </Row>
           </Col>
           <Col flex="none">
             <Tooltip title="Menu">
@@ -106,7 +115,6 @@ const MyHeader = (props) => {
         onClose={onClose}
         open={openSidebar}
       >
-        <div className="logo" />
         <Menu
           items={[
             {
@@ -119,10 +127,19 @@ const MyHeader = (props) => {
               icon: <PlusCircleOutlined style={{ fontSize: "16px" }} />,
               label: <Link to="/face/registration">Đăng ký khuôn mặt</Link>,
             },
+            {
+              key: "AttendanceCheckForm",
+              // icon: <PlusCircleOutlined style={{ fontSize: "16px" }} />,
+              icon: <FontAwesomeIcon icon={faCalendarCheck} fontSize={18} />,
+              label: (
+                <AttendanceCheckForm notify={notify} webcamRef={webcamRef} />
+              ),
+            },
             menuItems,
           ]}
         />
       </Drawer>
+      {contextHolder}
     </>
   );
 };

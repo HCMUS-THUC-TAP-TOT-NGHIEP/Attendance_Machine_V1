@@ -17,7 +17,7 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import Webcam from "react-webcam";
-import { useAuthState } from "../../Contexts/AuthContext";
+import { useAuthDispatch, useAuthState } from "../../Contexts/AuthContext";
 import Config from "../../config";
 import { LoadingDepartmentBE, LoadingEmployeeBE, RegisterFaceBE } from "./api";
 import * as FaceApi from "face-api.js";
@@ -26,6 +26,8 @@ import {
   useFaceApiState,
 } from "../../Contexts/FaceApiContext";
 import { loadModels } from "../../FaceApi";
+import { handleErrorOfRequest } from "../../utils/Helpers";
+import { Logout2 } from "../Authentication/api";
 
 const { Option } = Select;
 const maximumImageRegister = Config.registrationImages;
@@ -41,6 +43,7 @@ const FaceRegistrationPage = function (props) {
   const [tabKey, setTabKey] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const userDetails = useAuthState();
+  const dispatch = useAuthDispatch();
 
   useEffect(() => {
     if (adminRequired) {
@@ -76,22 +79,17 @@ const FaceRegistrationPage = function (props) {
         description: res.Description,
       });
     } catch (error) {
-      if (error.response) {
+      if (error.status === 401) {
+        navigate("/login");
+        Logout2(dispatch);
         notify.error({
-          message: "Có lỗi ở response.",
-          description: `[${error.response.statusText}]`,
+          message: <b>Thông báo</b>,
+          description:
+            "Vui lòng sử dụng tài khoản quản trị viên để đăng ký khuôn mặt.",
         });
-      } else if (error.request) {
-        notify.error({
-          message: "Có lỗi ở request.",
-          description: error,
-        });
-      } else {
-        notify.error({
-          message: "Có lỗi ở máy khách",
-          description: error.message,
-        });
+        return;
       }
+      handleErrorOfRequest({ error, notify });
     } finally {
       setIsSubmitting(false);
     }
@@ -188,6 +186,8 @@ const SelectUserForm = (props) => {
   const [loadingDepartment, setLoadingDepartment] = useState(false);
   const [loadingEmployee, setLoadingEmployee] = useState(false);
   const userDetails = useAuthState();
+  const dispatch = useAuthDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!userDetails.token) {
@@ -206,22 +206,17 @@ const SelectUserForm = (props) => {
           description: res1.Description,
         });
       } catch (error) {
-        if (error.response) {
+        if (error.response.status === 401) {
+          navigate("/login");
+          Logout2(dispatch).then((res) => {});
           notify.error({
-            message: "Có lỗi ở response.",
-            description: `[${error.response.statusText}]`,
+            message: <b>Thông báo</b>,
+            description:
+              "Vui lòng sử dụng tài khoản quản trị viên để đăng ký khuôn mặt.",
           });
-        } else if (error.request) {
-          notify.error({
-            message: "Có lỗi ở request.",
-            description: error,
-          });
-        } else {
-          notify.error({
-            message: "Có lỗi ở máy khách",
-            description: error.message,
-          });
+          return;
         }
+        handleErrorOfRequest({ error, notify });
       } finally {
         setLoadingDepartment(false);
       }
@@ -249,22 +244,7 @@ const SelectUserForm = (props) => {
           description: res1.Description,
         });
       } catch (error) {
-        if (error.response) {
-          notify.error({
-            message: "Có lỗi ở response.",
-            description: `[${error.response.statusText}]`,
-          });
-        } else if (error.request) {
-          notify.error({
-            message: "Có lỗi ở request.",
-            description: error,
-          });
-        } else {
-          notify.error({
-            message: "Có lỗi ở máy khách",
-            description: error.message,
-          });
-        }
+        handleErrorOfRequest({ error, notify });
       } finally {
         setLoadingEmployee(false);
       }
@@ -347,6 +327,8 @@ function CaptureFaceComponent({
   const faceApiDispatch = useFaceApiDispatch();
   const [imageList, setImageList] = useState(pictureList);
   const [notify, contextHolder] = notification.useNotification();
+  const [capProcessing, setCapProcessing] = useState(false);
+  const dispatch = useAuthDispatch();
 
   useEffect(() => {
     if (!active) return;
@@ -357,7 +339,7 @@ function CaptureFaceComponent({
         }
         startVideo();
       } catch (error) {
-        notify.error({ message: error });
+        handleErrorOfRequest({ error, notify });
       }
     };
     initial();
@@ -382,25 +364,26 @@ function CaptureFaceComponent({
   const autoTakePhoto = async () => {
     const video = webcamRef.current.video;
     if (webcamRef && webcamRef.current) {
+      setCapProcessing(true);
       try {
         const detection = await FaceApi.detectSingleFace(
-          video
-          // new FaceApi.TinyFaceDetectorOptions()
-        ).withFaceExpressions();
+          video,
+          new FaceApi.TinyFaceDetectorOptions()
+        );
         if (detection) {
           // console.log(detection);
-          var pictureSrcList = await extractFaceFromBox(
-            video,
-            detection.detection.box
-          );
+          var pictureSrcList = await extractFaceFromBox(video, detection.box);
           console.log("pictureSrcList", pictureSrcList);
           if (pictureSrcList && pictureSrcList.length != 0) {
             setImageList([...imageList, pictureSrcList[0]]);
             clearInterval(takePhotoInterval);
+            setCapProcessing(false);
           }
         }
       } catch (error) {
-        console.log("detectFace", error);
+        handleErrorOfRequest({ error, notify });
+      } finally {
+        // setCapProcessing(false);
       }
     }
   };
@@ -408,7 +391,12 @@ function CaptureFaceComponent({
   const extractFaceFromBox = async (inputImage, box) => {
     console.log(box);
     const regionsToExtract = [
-      new FaceApi.Rect(box.x - 50, box.y - 50, box.width + 100, box.height + 100),
+      new FaceApi.Rect(
+        box.x - 50,
+        box.y - 50,
+        box.width + 100,
+        box.height + 100
+      ),
     ];
 
     let faceImages = await FaceApi.extractFaces(inputImage, regionsToExtract);
@@ -417,39 +405,37 @@ function CaptureFaceComponent({
   };
 
   const detectFace = () => {
-    /*
-    const video = webcamRef.current.video;
-    if (interval) {
-      clearInterval(interval);
-    }
-    interval = setInterval(async () => {
-      try {
-        const canvas = canvasRef.current;
-        const displaySize = {
-          width: video.offsetWidth,
-          height: video.offsetHeight,
-        };
-        FaceApi.matchDimensions(canvasRef.current, displaySize);
-        const detection = await FaceApi.detectSingleFace(
-          video,
-          new FaceApi.TinyFaceDetectorOptions()
-        ).withFaceExpressions();
-        if (detection) {
-          console.log(detection);
-          const resizedDetections = FaceApi.resizeResults(
-            detection,
-            displaySize
-          );
-          canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-          FaceApi.draw.drawDetections(canvas, resizedDetections);
-        }
-      } catch (error) {
-        console.log("detectFace", error);
-      }
-
-      // }, Config.AttendanceCheckSeconds * 1000);
-    }, 100);
-    */
+    // const video = webcamRef.current.video;
+    // if (interval) {
+    //   clearInterval(interval);
+    // }
+    // interval = setInterval(async () => {
+    //   if (!FaceApi) return;
+    //   try {
+    //     const canvas = canvasRef.current;
+    //     const displaySize = {
+    //       width: video.offsetWidth,
+    //       height: video.offsetHeight,
+    //     };
+    //     FaceApi.matchDimensions(canvasRef.current, displaySize);
+    //     const detection = await FaceApi.detectSingleFace(
+    //       video,
+    //       new FaceApi.TinyFaceDetectorOptions()
+    //     ).withFaceExpressions();
+    //     if (detection) {
+    //       console.log(detection);
+    //       const resizedDetections = FaceApi.resizeResults(
+    //         detection,
+    //         displaySize
+    //       );
+    //       canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    //       FaceApi.draw.drawDetections(canvas, resizedDetections);
+    //     }
+    //   } catch (error) {
+    //     console.log("detectFace", error);
+    //   }
+    // }, Config.AttendanceCheckSeconds * 1000);
+    // // }, 100);
   };
 
   const startVideo = () => {
@@ -460,7 +446,15 @@ function CaptureFaceComponent({
         webcamRef.current.video.addEventListener("playing", () => detectFace());
       })
       .catch((error) => {
-        console.error(error);
+        if (error.status === 401) {
+          Logout2(dispatch);
+          notify.error({
+            message: <b>Thông báo</b>,
+            description: "Yêu cầu đăng nhập bằng tài khoản quản trị.",
+          });
+          return;
+        }
+        handleErrorOfRequest({ error, notify });
       });
   };
 
@@ -470,6 +464,7 @@ function CaptureFaceComponent({
         justify="center"
         style={{
           padding: "5px",
+          overflowX: "hidden",
         }}
       >
         {contextHolder}
@@ -502,23 +497,23 @@ function CaptureFaceComponent({
               width: "100%",
             }}
           >
-            <Tooltip title="Bắt đầu chụp ảnh tự động">
-              <Button
-                type="primary"
-                icon={<CameraFilled />}
-                shape="circle"
-                onClick={autoTakePhoto}
-                disabled={imageList.length >= maximumImageRegister}
-              />
-            </Tooltip>
-            <Tooltip title="Chụp lại (Retake)">
-              <Button
-                type="primary"
-                icon={<UndoOutlined />}
-                onClick={() => setImageList([])}
-                disabled={imageList.length == 0}
-              />
-            </Tooltip>
+            <Button
+              type="primary"
+              icon={<CameraFilled />}
+              onClick={autoTakePhoto}
+              disabled={imageList.length >= maximumImageRegister}
+              loading={capProcessing}
+            >
+              Chụp ảnh tự động
+            </Button>
+            <Button
+              type="primary"
+              icon={<UndoOutlined />}
+              onClick={() => setImageList([])}
+              disabled={imageList.length == 0}
+            >
+              Chụp lại / Retake
+            </Button>
           </Space>
         </Col>
         <Col key="col-2" md={10}>
@@ -537,7 +532,7 @@ function CaptureFaceComponent({
                 return (
                   <Image
                     key={index}
-                    height={100}
+                    width={120}
                     src={rec}
                     className="boxShadow89"
                     preview={true}
@@ -550,8 +545,7 @@ function CaptureFaceComponent({
                   return (
                     <Image
                       key={index + imageList.length}
-                      height={100}
-                      width={1600 / 9}
+                      width={120}
                       src={Config.ImagePlaceHolder}
                       className="boxShadow89"
                     />

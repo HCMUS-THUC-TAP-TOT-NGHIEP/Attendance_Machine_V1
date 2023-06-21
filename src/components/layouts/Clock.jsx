@@ -15,7 +15,12 @@ const MyClock = (props) => {
     return () => clearInterval(timer);
   }, []);
   return (
-    <Space direction="vertical" align="center" style={containerStyle}>
+    <Space
+      className="boxShadow0"
+      direction="vertical"
+      align="center"
+      style={containerStyle}
+    >
       <Typography.Title
         level={5}
         style={{
@@ -53,4 +58,3 @@ const MyClock = (props) => {
 };
 
 export { MyClock };
-
