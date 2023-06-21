@@ -1,0 +1,10 @@
+#container {
+  width: 100%;
+  position: relative;
+}
+
+#container canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
