@@ -129,16 +129,16 @@ export const RecognitionByImagesComponent = (props) => {
         if (response.Status === 1) {
           const { Id, Name, Img } = response.ResponseData;
           temp["result"] = `${Id} - ${Name}`;
-          notify.info({
-            message: "Ok",
-            description: `${Id}, ${Name}`,
-          });
+          // notify.info({
+          //   message: "Ok",
+          //   description: `${Id}, ${Name}`,
+          // });
         } else {
           temp["result"] = response.Description;
-          notify.error({
-            message: <b>Thông báo</b>,
-            description: response.Description,
-          });
+          // notify.error({
+          //   message: <b>Thông báo</b>,
+          //   description: response.Description,
+          // });
         }
       } catch (error) {
         handleErrorOfRequest({ notify, error });

@@ -10,7 +10,7 @@ let AxiosInstance = axios.create({
   },
 });
 
-const AutoFaceRecognitionBE = async (pictureSrc) => {
+const AutoFaceRecognitionBE = async ({ pictureSrc, attendanceTime }) => {
   var requestData = {};
   if (process.env.NODE_ENV !== "production") {
     const uuid = require("uuid");
@@ -18,7 +18,7 @@ const AutoFaceRecognitionBE = async (pictureSrc) => {
     requestData["uuid"] = id;
   }
   requestData["Picture"] = pictureSrc;
-  requestData["AttendanceTime"] = new Date();
+  requestData["AttendanceTime"] = attendanceTime || new Date().toISOString();
   var response = await AxiosInstance.post("api/face/recognition", requestData, {
     headers: {
       "Content-Type": "application/json",
@@ -47,7 +47,6 @@ const CheckinWithEmployeeId = async (request) => {
   formData.append("Image", request.Image);
   formData.append("Method", request.Method);
   formData.append("EmployeeId", request.EmployeeId);
-  console.log(new Date().toISOString());
   formData.append(
     "AttendanceTime",
     request.AttendanceTime || new Date().toISOString()
