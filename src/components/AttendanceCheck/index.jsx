@@ -1,12 +1,17 @@
 import {
   Avatar,
   Button,
+  Card,
+  Col,
   Form,
+  Image,
   Layout,
   List,
   Modal,
+  Row,
   Select,
   Spin,
+  Typography,
   message,
   notification,
   theme,
@@ -49,6 +54,7 @@ const AutoAttendanceCheck = ({ webcamRef, props }) => {
   } = theme.useToken();
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [responseList, setResponseList] = useState([]);
   const faceApiState = useFaceApiState();
   const { FaceApi, loadedNeededModels, LabeledDescriptors } = faceApiState;
   const faceApiDispatch = useFaceApiDispatch();
@@ -120,12 +126,12 @@ const AutoAttendanceCheck = ({ webcamRef, props }) => {
           .getContext("2d")
           .clearRect(0, 0, canvas.width + 50, canvas.height + 50);
         FaceApi.draw.drawDetections(canvas, resizedDetections);
-        detections.forEach(async (detection) => {
-          var pictureSrcList = await extractFaceFromBox(video, detection.box);
-          await recognitionBE(detection.descriptor, pictureSrcList[0]);
-        });
-        // var pictureSrcList = await extractFaceFromBox(video, detections[0].box);
-        // await recognitionBE(detections[0].descriptor, pictureSrcList[0]);
+        // detections.forEach(async (detection) => {
+        //   var pictureSrcList = await extractFaceFromBox(video, detection.box);
+        //   await recognitionBE(detection.descriptor, pictureSrcList[0]);
+        // });
+        var pictureSrcList = await extractFaceFromBox(video, detections[0].box);
+        await recognitionBE(detections[0].descriptor, pictureSrcList[0]);
       }
     }, 2000);
   };
@@ -141,41 +147,67 @@ const AutoAttendanceCheck = ({ webcamRef, props }) => {
 
   const recognitionBE = async (descriptor, pictureSrc) => {
     try {
-      var response = await AutoFaceRecognitionBE(pictureSrc);
+      let attendanceTime = new Date();
+      var response = await AutoFaceRecognitionBE({
+        pictureSrc,
+        attendanceTime: attendanceTime.toISOString(),
+      });
+      console.log(responseList);
+
       if (response.Status === 1) {
         const { Id, Name, Img } = response.ResponseData;
-        console.log(Id, Name);
-        notify.open({
-          description: (
-            <List key={Id} itemLayout="horizontal">
-              <List.Item>
-                <List.Item.Meta
-                  avatar={
-                    <Avatar
-                      shape="square"
-                      // src={`data:image/png;base64,${Img}`}
-                      src={pictureSrc}
-                      size={{
-                        xs: 24,
-                        sm: 32,
-                        md: 40,
-                        lg: 64,
-                        xl: 80,
-                        xxl: 100,
-                      }}
-                    />
-                  }
-                  title={"Xin chào, " + Name}
-                  description={Name}
-                />
-              </List.Item>
-            </List>
-          ),
-          placement: "bottomLeft",
-          duration: 60,
-        });
+        setResponseList((responseList) => [
+          {
+            Id,
+            Name,
+            Img: pictureSrc,
+            AttendanceTime: attendanceTime.toLocaleString(),
+            Success: true,
+          },
+          ...responseList.filter((element, index) => index < 19),
+        ]);
+        // notify.open({
+        //   description: (
+        //     <List key={Id} itemLayout="horizontal">
+        //       <List.Item>
+        //         <List.Item.Meta
+        //           avatar={
+        //             <Avatar
+        //               shape="square"
+        //               // src={`data:image/png;base64,${Img}`}
+        //               src={pictureSrc}
+        //               size={{
+        //                 xs: 24,
+        //                 sm: 32,
+        //                 md: 40,
+        //                 lg: 64,
+        //                 xl: 80,
+        //                 xxl: 100,
+        //               }}
+        //             />
+        //           }
+        //           title={"Xin chào, " + Name}
+        //           description={Name}
+        //         />
+        //       </List.Item>
+        //     </List>
+        //   ),
+        //   placement: "bottomLeft",
+        //   duration: 60,
+        // });
       } else {
         console.error(response.Description);
+        setResponseList((responseList) => [
+          {
+            Id: "",
+            Name: "",
+            Img: pictureSrc,
+            AttendanceTime: attendanceTime.toLocaleString(),
+            Success: false,
+            Description: response.Description,
+          },
+          ...responseList.filter((element, index) => index < 19),
+        ]);
       }
     } catch (error) {
       handleErrorOfRequest({ error, notify });
@@ -231,100 +263,211 @@ const AutoAttendanceCheck = ({ webcamRef, props }) => {
         {contextHolder}
         <Content
           style={{
-            padding: "10px",
-            position: "relative",
-            overflowY: "hidden",
-            height: "100vh",
+            padding: 10,
+            overflowX: "hidden",
           }}
         >
-          <MyClock
-            containerStyle={{
-              padding: "10px",
-              position: "absolute",
-              top: 0,
-              left: 0,
-              background: colorInfoActive,
-              zIndex: 100,
-            }}
-          />
-          <Webcam
-            id="video"
-            className="boxShadow89"
-            style={{ width: "100%", position: "absolute", top: 0, left: 0 }}
-            audio={false}
-            ref={webcamRef}
-            screenshotFormat="image/png"
-            videoConstraints={Config.videoConstraints}
-            onPlaying={handlePlayEvent}
-          ></Webcam>
-
-          <canvas
-            ref={canvasRef}
-            style={{ zIndex: 101, position: "absolute" }}
-          />
-          <Button
-            onClick={handleVideo}
-            className="boxShadow89"
-            style={{
-              position: "absolute",
-              top: "10px",
-              right: "10px",
-              zIndex: 102,
-            }}
-            type="primary"
-            size="large"
-          >
-            {videoswitch ? "Tắt camera" : "Mở camera"}
-          </Button>
-
-          <Modal
-            open={open}
-            title={<div level={5}>Cung cấp mã nhân viên </div>}
-            onCancel={handleCancel}
-            maskClosable={true}
-            footer={[
-              <Button key="submit" htmlType="submit" type="primary">
-                Chấm công
-              </Button>,
-              <Button key="back" onClick={handleCancel}>
-                Trở lại
-              </Button>,
-            ]}
-          >
-            <Form layout="vertical">
-              <Form.Item
-                label="Nhân viên"
-                name="EmployeeId"
-                rules={[
-                  {
-                    required: true,
-                    message: "Vui lòng nhập từ khóa để tìm nhân viên!",
-                  },
-                ]}
-                hasFeedback
-                tooltip="Cung cấp mã nhân viên để chấm công khi không nhận diện được khuôn mặt"
-                help="Nhập mã hoặc tên nhân viên để tìm kiếm"
+          <Row gutter={[24, 24]} wrap style={{ height: "100vh" }}>
+            <Col
+              xs={24}
+              md={16}
+              lg={16}
+              xl={16}
+              xxl={16}
+              style={{
+                position: "relative",
+                overflowY: "hidden",
+                overflowX: "hidden",
+              }}
+            >
+              <MyClock
+                containerStyle={{
+                  padding: "10px",
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  background: colorInfoActive,
+                  zIndex: 100,
+                }}
+              />
+              <Webcam
+                id="video"
+                className="boxShadow89"
+                style={{ width: "100%", position: "absolute", top: 0, left: 0 }}
+                audio={false}
+                ref={webcamRef}
+                screenshotFormat="image/png"
+                videoConstraints={Config.videoConstraints}
+                onPlaying={handlePlayEvent}
+              ></Webcam>
+              <canvas
+                ref={canvasRef}
+                style={{ zIndex: 101, position: "absolute" }}
+              />
+              <Button
+                onClick={handleVideo}
+                className="boxShadow89"
+                style={{
+                  position: "absolute",
+                  top: "10px",
+                  right: "10px",
+                  zIndex: 102,
+                }}
+                type="primary"
+                size="large"
               >
-                <Select
-                  size="large"
-                  showSearch={true}
-                  onSearch={handleSearch}
-                  options={(employeeList || []).map((employee) => ({
-                    label: `${employee.LastName} ${employee.FirstName} (Mã NV: ${employee.Id})`,
-                    value: employee.Id,
-                  }))}
-                  showArrow={false}
-                  filterOption={false}
-                  defaultActiveFirstOption={false}
-                  notFoundContent={null}
-                />
-              </Form.Item>
-            </Form>
-          </Modal>
+                {videoswitch ? "Tắt camera" : "Mở camera"}
+              </Button>
+            </Col>
+            <Col xs={24} md={8} lg={8} xl={8} xxl={8}>
+              <Card
+                className="boxShadow0 rounded"
+                id="scrollableDiv"
+                style={{ overflowY: "hidden" }}
+              >
+                <List
+                  dataSource={responseList}
+                  size="small"
+                  header={
+                    <Typography.Title
+                      level={3}
+                      style={{ margin: 0, textAlign: "center", fontSize: "30" }}
+                    >
+                      Chấm công
+                    </Typography.Title>
+                  }
+                  pagination={{
+                    defaultPageSize: 5,
+                    align: "center",
+                    hideOnSinglePage: true,
+                  }}
+                  style={{ overflowY: "auto", height: 600 }}
+                  renderItem={(item, index) => (
+                    <List.Item key={index}>
+                      <List.Item.Meta
+                        style={{ alignItems: "center" }}
+                        avatar={<Image width={50} preview src={item.Img} />}
+                        title={
+                          <Typography.Paragraph
+                            style={{ color: item.Success ? "black" : "red" }}
+                          >
+                            {item.Success ? item.Name : "Unknown"}
+                          </Typography.Paragraph>
+                        }
+                        description={
+                          "Thời gian: " + (item.AttendanceTime || "")
+                        }
+                      />
+                    </List.Item>
+                  )}
+                ></List>
+              </Card>
+            </Col>
+          </Row>
         </Content>
       </Layout>
     </Spin>
   );
+  // return (
+  //   <Spin spinning={!loadedNeededModels}>
+  //     <Layout>
+  //       {contextHolder}
+  //       <Content
+  //         style={{
+  //           padding: "10px",
+  //           position: "relative",
+  //           overflowY: "hidden",
+  //           height: "100vh",
+  //         }}
+  //       >
+  //         <MyClock
+  //           containerStyle={{
+  //             padding: "10px",
+  //             position: "absolute",
+  //             top: 0,
+  //             left: 0,
+  //             background: colorInfoActive,
+  //             zIndex: 100,
+  //           }}
+  //         />
+  //         <Webcam
+  //           id="video"
+  //           className="boxShadow89"
+  //           style={{ width: "100%", position: "absolute", top: 0, left: 0 }}
+  //           audio={false}
+  //           ref={webcamRef}
+  //           screenshotFormat="image/png"
+  //           videoConstraints={Config.videoConstraints}
+  //           onPlaying={handlePlayEvent}
+  //         ></Webcam>
+
+  //         <canvas
+  //           ref={canvasRef}
+  //           style={{ zIndex: 101, position: "absolute" }}
+  //         />
+  //         <Button
+  //           onClick={handleVideo}
+  //           className="boxShadow89"
+  //           style={{
+  //             position: "absolute",
+  //             top: "10px",
+  //             right: "10px",
+  //             zIndex: 102,
+  //           }}
+  //           type="primary"
+  //           size="large"
+  //         >
+  //           {videoswitch ? "Tắt camera" : "Mở camera"}
+  //         </Button>
+
+  //         <Modal
+  //           open={open}
+  //           title={<div level={5}>Cung cấp mã nhân viên </div>}
+  //           onCancel={handleCancel}
+  //           maskClosable={true}
+  //           footer={[
+  //             <Button key="submit" htmlType="submit" type="primary">
+  //               Chấm công
+  //             </Button>,
+  //             <Button key="back" onClick={handleCancel}>
+  //               Trở lại
+  //             </Button>,
+  //           ]}
+  //         >
+  //           <Form layout="vertical">
+  //             <Form.Item
+  //               label="Nhân viên"
+  //               name="EmployeeId"
+  //               rules={[
+  //                 {
+  //                   required: true,
+  //                   message: "Vui lòng nhập từ khóa để tìm nhân viên!",
+  //                 },
+  //               ]}
+  //               hasFeedback
+  //               tooltip="Cung cấp mã nhân viên để chấm công khi không nhận diện được khuôn mặt"
+  //               help="Nhập mã hoặc tên nhân viên để tìm kiếm"
+  //             >
+  //               <Select
+  //                 size="large"
+  //                 showSearch={true}
+  //                 onSearch={handleSearch}
+  //                 options={(employeeList || []).map((employee) => ({
+  //                   label: `${employee.LastName} ${employee.FirstName} (Mã NV: ${employee.Id})`,
+  //                   value: employee.Id,
+  //                 }))}
+  //                 showArrow={false}
+  //                 filterOption={false}
+  //                 defaultActiveFirstOption={false}
+  //                 notFoundContent={null}
+  //               />
+  //             </Form.Item>
+  //           </Form>
+  //         </Modal>
+  //       </Content>
+  //     </Layout>
+  //   </Spin>
+  // );
 };
 
 export { AutoAttendanceCheck };
