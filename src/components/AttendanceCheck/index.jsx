@@ -121,17 +121,17 @@ const AutoAttendanceCheck = ({ webcamRef, props }) => {
           detections,
           displaySize
         );
-        // canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-        canvas
-          .getContext("2d")
-          .clearRect(0, 0, canvas.width + 50, canvas.height + 50);
+        canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+        // canvas
+        //   .getContext("2d")
+        //   .clearRect(0, 0, canvas.width + 50, canvas.height + 50);
         FaceApi.draw.drawDetections(canvas, resizedDetections);
-        // detections.forEach(async (detection) => {
-        //   var pictureSrcList = await extractFaceFromBox(video, detection.box);
-        //   await recognitionBE(detection.descriptor, pictureSrcList[0]);
-        // });
-        var pictureSrcList = await extractFaceFromBox(video, detections[0].box);
-        await recognitionBE(detections[0].descriptor, pictureSrcList[0]);
+        detections.forEach(async (detection) => {
+          var pictureSrcList = await extractFaceFromBox(video, detection.box);
+          await recognitionBE(detection.descriptor, pictureSrcList[0]);
+        });
+        // var pictureSrcList = await extractFaceFromBox(video, detections[0].box);
+        // await recognitionBE(detections[0].descriptor, pictureSrcList[0]);
       }
     }, 2000);
   };
