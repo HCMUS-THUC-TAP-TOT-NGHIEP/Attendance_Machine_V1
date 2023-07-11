@@ -1,0 +1,17 @@
+{
+  "responseOverrides": {
+    "400": {
+      "rewrite": "/"
+    },
+    "401": {
+      "redirect": "/login",
+      "statusCode": 302
+    },
+    "403": {
+      "rewrite": "/"
+    }
+  },
+  "navigationFallback": {
+    "rewrite": "/"
+  }
+}
