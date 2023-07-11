@@ -391,12 +391,13 @@ function CaptureFaceComponent({
   const extractFaceFromBox = async (inputImage, box) => {
     console.log(box);
     const regionsToExtract = [
-      new FaceApi.Rect(
-        box.x - 50,
-        box.y - 50,
-        box.width + 100,
-        box.height + 100
-      ),
+      // new FaceApi.Rect(
+      //   box.x - 50,
+      //   box.y - 50,
+      //   box.width + 100,
+      //   box.height + 100
+      // ),
+      new FaceApi.Rect(box.x, box.y, box.width, box.height),
     ];
 
     let faceImages = await FaceApi.extractFaces(inputImage, regionsToExtract);
