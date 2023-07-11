@@ -1,6 +1,5 @@
 export const handleErrorOfRequest = ({ error, notify, ...rest }) => {
   try {
-    console.log(error);
     const errorList = ["ECONNABORTED", "ERR_NETWORK"];
     if (error && error.code && errorList.includes(error.code)) {
       notify.error({
