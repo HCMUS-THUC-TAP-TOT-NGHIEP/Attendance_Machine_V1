@@ -147,10 +147,10 @@ const AutoAttendanceCheck = ({ webcamRef, props }) => {
 
   const recognitionBE = async (descriptor, pictureSrc) => {
     try {
-      let attendanceTime = new Date();
+      let attendanceTime = dayjs().locale("vi");
       var response = await AutoFaceRecognitionBE({
         pictureSrc,
-        attendanceTime: attendanceTime.toISOString(),
+        attendanceTime: attendanceTime.toISOString().replace("Z", ""),
       });
       console.log(responseList);
 
