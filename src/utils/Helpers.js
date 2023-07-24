@@ -35,7 +35,7 @@ export const handleErrorOfRequest = ({ error, notify, ...rest }) => {
         description: `${error.message}`,
       });
     }
-  } catch (error) {
-    console.error(error.message);
+  } catch (err) {
+    console.error(err);
   }
 };
